@@ -23,7 +23,9 @@
       "output": "single",
       "name": "DayLog",
       "shortName": "DayLog",
-      "bundler": "metro"
+      "bundler": "metro",
+      "backgroundColor": "#F7F7F5",
+      "themeColor": "#F7F7F5"
     },
     "plugins": [
       "expo-sqlite"

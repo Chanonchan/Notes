@@ -6,11 +6,13 @@ A personal work log for your phone: record what you did in a few seconds, then r
 
 **https://chanonchan.github.io/Notes/**
 
-Open it in Safari (iPhone) or Chrome (Android), then add it to your home screen so it opens like an app:
-- iPhone: tap Share → **Add to Home Screen**
-- Android: tap ⋮ → **Add to Home screen**
+Install it as an app (it then opens full-screen from its own icon, without the browser bar):
+- iPhone: open the link in **Safari** → Share → **Add to Home Screen** → Add
+- Android: open it in **Chrome** → ⋮ → **Install app** (or Add to Home screen)
 
-Your log is saved in that browser on that phone (IndexedDB), so nothing is sent anywhere. Clearing the browser's website data deletes it, so use Export (milestone 5) for backups.
+Your log is saved on the phone (IndexedDB), so nothing is sent anywhere. On iPhone, the home-screen app keeps its own storage, separate from Safari. Deleting the app or clearing website data deletes the log, so use Export (milestone 5) for backups.
+
+`public/` holds the web-app manifest, icons and the HTML template that makes this installable.
 
 Publishing a new version: run `npm run build:web`, then push the contents of `dist/` to the `gh-pages` branch.
 

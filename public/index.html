@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- viewport-fit=cover lets the app draw under the notch; safe areas are handled in the app. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+
+    <!-- Installable app: "Add to Home Screen" opens full-screen instead of in the browser. -->
+    <link rel="manifest" href="/Notes/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="DayLog" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="/Notes/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/Notes/favicon.png" />
+    <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background-color: #F7F7F5;
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background-color: #111114;
+        }
+      }
+      body {
+        overflow: hidden;
+        /* No rubber-band bounce or double-tap zoom: feels like an app. */
+        overscroll-behavior: none;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run DayLog.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
