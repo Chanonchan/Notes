@@ -75,7 +75,7 @@ export function CalendarGrid({
                     {Number(day.slice(8))}
                   </Text>
                 </View>
-                <View style={[styles.dot, { backgroundColor: n ? t.muted : 'transparent' }]} />
+                <View style={[styles.dot, { backgroundColor: n ? t.primary : 'transparent' }]} />
               </Pressable>
             );
           })}

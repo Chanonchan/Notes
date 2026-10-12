@@ -163,7 +163,6 @@ export function TopicSheet({
               <ListRow
                 key={s.topic.id}
                 icon="pricetag-outline"
-                iconColor={t.muted}
                 title={s.topic.name}
                 titleLines={1}
                 accessibilityLabel={s.topic.name}

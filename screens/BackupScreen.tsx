@@ -114,7 +114,7 @@ export function BackupScreen(_: RootScreenProps<'Backup'>) {
       <ListGroup>
         <ListRow
           icon={persistent === false ? 'warning' : 'shield-checkmark'}
-          iconColor={persistent === false ? t.types.blocked : t.text}
+          iconColor={persistent === false ? t.types.blocked : t.types.done}
           title="Saved on this phone"
           subtitle={[
             stats ? `${stats.entries} ${stats.entries === 1 ? 'entry' : 'entries'} · ${stats.topics} ${stats.topics === 1 ? 'topic' : 'topics'}` : null,

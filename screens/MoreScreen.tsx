@@ -1,9 +1,12 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
-import { getCarryOver } from '../db';
-import { useQuery } from '../hooks/useDb';
-import { useTheme } from '../hooks/useTheme';
+import { getCarryOver, setSetting } from '../db';
+import { useMutation, useQuery } from '../hooks/useDb';
+import { setAppearance, useAppearance, useTheme, type Appearance } from '../hooks/useTheme';
+
+const APPEARANCE_ORDER: Appearance[] = ['auto', 'light', 'dark'];
+const APPEARANCE_LABELS: Record<Appearance, string> = { auto: 'Automatic', light: 'Light', dark: 'Dark' };
 import { todayKey } from '../services/dates';
 import type { TabScreenProps } from '../types/navigation';
 
@@ -11,6 +14,8 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
   const t = useTheme();
   const today = todayKey();
   const carry = useQuery((db) => getCarryOver(db, today), [today]).data;
+  const appearance = useAppearance();
+  const saveAppearance = useMutation((db, a: Appearance) => setSetting(db, 'appearance', a === 'auto' ? null : a));
 
   return (
     <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.container}>
@@ -29,6 +34,22 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
             title="Backup & export"
             subtitle="Move your data between Safari and the app, or keep a copy"
             onPress={() => navigation.navigate('Backup')}
+          />
+        </ListGroup>
+
+        <GroupLabel>Settings</GroupLabel>
+        <ListGroup>
+          <ListRow
+            icon="contrast-outline"
+            title="Appearance"
+            value={APPEARANCE_LABELS[appearance]}
+            onPress={() => {
+              const next = APPEARANCE_ORDER[(APPEARANCE_ORDER.indexOf(appearance) + 1) % APPEARANCE_ORDER.length];
+              setAppearance(next);
+              void saveAppearance(next);
+            }}
+            chevron={false}
+            accessibilityHint="Switches between Automatic, Light and Dark"
           />
         </ListGroup>
 

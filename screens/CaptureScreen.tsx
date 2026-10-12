@@ -120,7 +120,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
           <ListGroup>
             <ListRow
               icon="return-down-forward"
-              iconColor={t.text}
               title={`${carry.items.length} open ${carry.items.length === 1 ? 'item' : 'items'} from ${
                 formatRelativeDay(carry.fromDay, today) === 'Yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)
               }`}
@@ -160,9 +159,9 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
       {/* Composer */}
       <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
         {toast ? (
-          <View style={[styles.toast, { backgroundColor: t.text }]} pointerEvents="none">
-            <Ionicons name="checkmark-circle" size={18} color={t.bg} />
-            <Text style={[styles.toastText, { color: t.bg }]}>Logged</Text>
+          <View style={[styles.toast, { backgroundColor: t.types.done }]} pointerEvents="none">
+            <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+            <Text style={[styles.toastText, { color: '#FFFFFF' }]}>Logged</Text>
           </View>
         ) : null}
 
@@ -181,9 +180,9 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
             accessibilityRole="button"
             accessibilityLabel={`Type and time: ${optionsLabel}. Tap to ${showOptions ? 'hide' : 'change'}.`}
             hitSlop={6}
-            style={[styles.typeBtn, { backgroundColor: t.chip, borderWidth: showOptions || optionsChanged ? 1.5 : 0, borderColor: t.text }]}
+            style={[styles.typeBtn, { backgroundColor: t.chip, borderWidth: showOptions ? 1.5 : 0, borderColor: t.primary }]}
           >
-            <Ionicons name={TYPE_ICONS[type]} size={24} color={optionsChanged ? t.text : t.muted} />
+            <Ionicons name={TYPE_ICONS[type]} size={24} color={t.types[type]} />
             {duration ? (
               <View style={[styles.durBadge, { backgroundColor: t.text }]}>
                 <Text style={[styles.durText, { color: t.bg }]}>{formatDuration(duration)}</Text>

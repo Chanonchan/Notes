@@ -19,7 +19,7 @@ export function TypeSelector({ value, onChange }: { value: EntryType; onChange: 
             style={[styles.segment, selected && [styles.selected, { backgroundColor: t.card }]]}
           >
             <Text
-              style={[styles.label, { color: selected ? t.text : t.muted }]}
+              style={[styles.label, { color: selected ? t.types[type] : t.muted }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >

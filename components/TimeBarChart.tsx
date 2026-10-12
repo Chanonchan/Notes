@@ -31,7 +31,7 @@ export function TimeBarChart({ topics }: { topics: TopicSummary[] }) {
   const toBar = (s: TopicSummary): Bar => ({
     key: String(s.topic?.id ?? 'none'),
     name: s.topic?.name ?? 'No topic',
-    color: t.muted,
+    color: t.primary,
     minutes: s.totalMinutes,
     entries: s.entryCount,
     days: s.days.length,
@@ -44,7 +44,7 @@ export function TimeBarChart({ topics }: { topics: TopicSummary[] }) {
       {
         key: 'other',
         name: `Other (${rest.length} topics)`,
-        color: t.muted,
+        color: t.primary,
         minutes: rest.reduce((s, x) => s + x.totalMinutes, 0),
         entries: rest.reduce((s, x) => s + x.entryCount, 0),
         days: 0,

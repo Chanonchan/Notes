@@ -5,7 +5,8 @@ export type SettingKey =
   | 'reminder_time'
   | 'workdays'
   | 'last_carryover_day'
-  | 'carryover_dismissed_day';
+  | 'carryover_dismissed_day'
+  | 'appearance';
 
 export async function getSetting(db: Db, key: SettingKey): Promise<string | null> {
   const row = await db.get<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);

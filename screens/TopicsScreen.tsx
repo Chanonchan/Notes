@@ -28,7 +28,6 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
     <ListRow
       key={s.topic.id}
       icon="pricetag-outline"
-      iconColor={t.muted}
       title={s.topic.name}
       titleLines={1}
       subtitle={topicSubtitle(s)}

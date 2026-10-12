@@ -11,9 +11,10 @@ import type { Db } from './db/client';
 import { openAppDb } from './db/openAppDb';
 import { migrate } from './db/migrations';
 import { markCarryOverPrompted, shouldPromptCarryOver } from './db/carryover';
+import { getSetting } from './db/settings';
 import { DbProvider, useDb } from './hooks/useDb';
 import { todayKey } from './services/dates';
-import { useTheme } from './hooks/useTheme';
+import { setAppearance, useTheme } from './hooks/useTheme';
 import { BackupScreen } from './screens/BackupScreen';
 import { CaptureScreen } from './screens/CaptureScreen';
 import { CarryOverScreen } from './screens/CarryOverScreen';
@@ -116,6 +117,8 @@ export default function App() {
     (async () => {
       const opened = await openAppDb();
       await migrate(opened);
+      const saved = await getSetting(opened, 'appearance');
+      if (saved === 'light' || saved === 'dark') setAppearance(saved);
       setDb(opened);
     })().catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, []);

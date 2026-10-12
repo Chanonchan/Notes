@@ -56,7 +56,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const byDay = new Map<string, Entry[]>();
   for (const e of entries) byDay.set(e.day, [...(byDay.get(e.day) ?? []), e]);
   const others = all.filter((s) => s.topic.id !== topicId);
-  const topicTile = (_color?: string) => <IconTile icon="pricetag-outline" color={t.muted} />;
+  const topicTile = (_color?: string) => <IconTile icon="pricetag-outline" color={t.primary} />;
 
   const saveName = async () => {
     try {
