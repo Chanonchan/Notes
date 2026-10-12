@@ -20,6 +20,7 @@ export type RootStackParamList = {
   Search: undefined;
   /** Morning prompt to continue yesterday's open items. */
   CarryOver: undefined;
+  Backup: undefined;
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

@@ -24,13 +24,18 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
             subtitle={carry ? `${carry.items.length} open from the last logged day` : 'Nothing open from the last logged day'}
             onPress={() => navigation.navigate('CarryOver')}
           />
+          <ListRow
+            icon="cloud-download-outline"
+            title="Backup & export"
+            subtitle="Move your data between Safari and the app, or keep a copy"
+            onPress={() => navigation.navigate('Backup')}
+          />
         </ListGroup>
 
         <GroupLabel>Coming next</GroupLabel>
         <ListGroup style={{ opacity: 0.6 }}>
           <ListRow icon="notifications-outline" title="Daily reminder" subtitle="“Anything you forgot to log today?”" />
           <ListRow icon="flame-outline" title="Streak" subtitle="Consecutive workdays logged (Mon–Sat)" />
-          <ListRow icon="download-outline" title="Export" subtitle="Back up everything as JSON or plain text" />
         </ListGroup>
       </View>
     </ScrollView>

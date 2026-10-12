@@ -11,6 +11,8 @@ import { TypeSelector } from '../components/TypeSelector';
 import { createEntry, createTopic, getCarryOver, isCarryOverDismissed, setLastTopicId } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
+import { storageStats } from '../services/export';
+import { isInstalledApp } from '../services/export/files';
 import { useTheme } from '../hooks/useTheme';
 import { formatDayLong, formatDuration, formatRelativeDay, todayKey } from '../services/dates';
 import { ENTRY_TYPE_LABELS, type EntryType } from '../types';
@@ -30,6 +32,9 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const today = todayKey();
   const { entries } = useDayEntries(today);
   const carry = useQuery((db) => getCarryOver(db, today), [today]).data;
+  // Fresh home-screen install with an empty log: point to the Safari → app move.
+  const totalEntries = useQuery((db) => storageStats(db), []).data?.entries;
+  const showMoveHint = Platform.OS === 'web' && isInstalledApp() && totalEntries === 0;
   const carryDismissed = useQuery((db) => isCarryOverDismissed(db, today), [today]).data;
 
   const [text, setText] = useState('');
@@ -143,6 +148,12 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
             <Text style={[styles.emptyText, { color: t.muted }]}>
               Type what you did in the box below and tap the arrow.{'\n'}Tap an entry later to edit it.
             </Text>
+            {showMoveHint ? (
+              <Pressable onPress={() => navigation.navigate('Backup')} accessibilityRole="button" hitSlop={8} style={styles.moveHint}>
+                <Ionicons name="swap-horizontal" size={18} color={t.primary} />
+                <Text style={{ color: t.primary, fontSize: 15, fontWeight: '700' }}>Used DayLog in Safari? Bring your entries here</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -225,6 +236,7 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  moveHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, minHeight: 44 },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
   options: { gap: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },

@@ -10,7 +10,7 @@ Install it as an app (it then opens full-screen from its own icon, without the b
 - iPhone: open the link in **Safari** → Share → **Add to Home Screen** → Add
 - Android: open it in **Chrome** → ⋮ → **Install app** (or Add to Home screen)
 
-Your log is saved on the phone (IndexedDB), so nothing is sent anywhere. On iPhone, the home-screen app keeps its own storage, separate from Safari. Deleting the app or clearing website data deletes the log, so use Export (milestone 5) for backups.
+Your log is saved on the phone (IndexedDB), so nothing is sent anywhere. On iPhone, the home-screen app keeps its own storage, separate from Safari. Deleting the app or clearing website data deletes the log, so keep a backup: More → Backup & export (Copy backup / Save backup file). The same screen moves data from Safari into the home-screen app (Copy backup in Safari, Paste backup in the app).
 
 `public/` holds the web-app manifest, icons and the HTML template that makes this installable.
 

@@ -14,6 +14,7 @@ import { markCarryOverPrompted, shouldPromptCarryOver } from './db/carryover';
 import { DbProvider, useDb } from './hooks/useDb';
 import { todayKey } from './services/dates';
 import { useTheme } from './hooks/useTheme';
+import { BackupScreen } from './screens/BackupScreen';
 import { CaptureScreen } from './screens/CaptureScreen';
 import { CarryOverScreen } from './screens/CarryOverScreen';
 import { EntryEditScreen } from './screens/EntryEditScreen';
@@ -100,6 +101,7 @@ function Root() {
         <Stack.Screen name="TopicDetail" component={TopicDetailScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="CarryOver" component={CarryOverScreen} options={{ presentation: 'modal', title: 'Carry over' }} />
+        <Stack.Screen name="Backup" component={BackupScreen} options={{ title: 'Backup & export' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

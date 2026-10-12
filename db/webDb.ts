@@ -37,27 +37,61 @@ async function save(bytes: Uint8Array): Promise<void> {
   });
 }
 
+/**
+ * Asks the browser to keep this site's storage permanently (not cleared
+ * automatically when the phone runs low on space). Installed home-screen
+ * apps are usually granted this. Returns whether storage is persistent.
+ */
+export async function requestPersistentStorage(): Promise<boolean | null> {
+  try {
+    if (typeof navigator === 'undefined' || !navigator.storage?.persist) return null;
+    if (await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return null;
+  }
+}
+
 export async function openWebDb(): Promise<Db> {
   const SQL = await initSqlJs();
   const saved = await load().catch(() => null);
   const db: Database = saved ? new SQL.Database(saved) : new SQL.Database();
   db.exec('PRAGMA foreign_keys = ON');
 
-  // Persist shortly after writes; flush immediately when the tab is hidden.
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  // Save right after every write. Saves never overlap: writes made while one
+  // is running are picked up by one more save straight after.
   let inTx = false;
-  const flush = () => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-    if (!inTx) save(db.export()).catch((e) => console.warn('DayLog: could not save', e));
+  let saving: Promise<void> | null = null;
+  let dirty = false;
+  const saveNow = (): Promise<void> => {
+    if (inTx) {
+      dirty = true;
+      return Promise.resolve();
+    }
+    if (saving) {
+      dirty = true;
+      return saving;
+    }
+    dirty = false;
+    const bytes = db.export();
+    // sql.js's export() reopens the database, which resets connection pragmas.
+    db.exec('PRAGMA foreign_keys = ON');
+    saving = save(bytes)
+      .catch((e) => console.warn('DayLog: could not save', e))
+      .finally(() => {
+        saving = null;
+        if (dirty) void saveNow();
+      });
+    return saving;
   };
-  const scheduleSave = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(flush, 300);
-  };
-  if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && timer && flush());
+  const scheduleSave = () => void saveNow();
+  if (typeof window !== 'undefined') {
+    // Belt and braces for the app being closed or backgrounded mid-write.
+    window.addEventListener('pagehide', () => void saveNow());
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && void saveNow());
   }
+  // Ask the browser not to evict our data under storage pressure.
+  void requestPersistentStorage();
 
   const rows = <T>(sql: string, params: SqlValue[]): T[] => {
     const stmt = db.prepare(sql);
