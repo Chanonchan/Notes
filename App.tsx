@@ -25,7 +25,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 const TAB_ICONS: Record<keyof TabParamList, IconName> = {
-  Log: 'create-outline',
+  Log: 'today-outline',
   History: 'calendar-outline',
   Summary: 'stats-chart-outline',
   Topics: 'pricetags-outline',
@@ -41,6 +41,7 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: t.primary,
         tabBarInactiveTintColor: t.muted,
         tabBarStyle: { backgroundColor: t.card, borderTopColor: t.border, minHeight: 60 },
@@ -48,7 +49,7 @@ function Tabs() {
         tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} color={color} size={size} />,
       })}
     >
-      <Tab.Screen name="Log" component={CaptureScreen} />
+      <Tab.Screen name="Log" component={CaptureScreen} options={{ title: 'Today' }} />
       <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen name="Summary" component={SummaryScreen} />
       <Tab.Screen name="Topics" component={TopicsScreen} />

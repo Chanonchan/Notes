@@ -19,11 +19,9 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
 
-  // Selected topic first so it's always visible without scrolling.
-  const ordered = useMemo(() => {
-    const sel = topics.find((x) => x.id === value);
-    return sel ? [sel, ...topics.filter((x) => x.id !== value)] : topics;
-  }, [topics, value]);
+  // The current choice comes first so it's always visible without scrolling.
+  const selected = topics.find((x) => x.id === value);
+  const rest = useMemo(() => topics.filter((x) => x.id !== value), [topics, value]);
   const suggested = suggestedId != null && suggestedId !== value ? topics.find((x) => x.id === suggestedId) : undefined;
 
   const create = async () => {
@@ -37,20 +35,6 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
 
   return (
     <View>
-      {suggested ? (
-        <Pressable
-          onPress={() => onChange(suggested.id)}
-          accessibilityRole="button"
-          accessibilityLabel={`Use suggested topic ${suggested.name}`}
-          style={[styles.suggest, { borderColor: suggested.color }]}
-        >
-          <Text style={{ color: t.muted, fontSize: 14 }}>Suggested: </Text>
-          <View style={[styles.dot, { backgroundColor: suggested.color }]} />
-          <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{suggested.name}</Text>
-          <Text style={{ color: t.primary, fontSize: 14, fontWeight: '700', marginLeft: 'auto' }}>Use</Text>
-        </Pressable>
-      ) : null}
-
       {creating ? (
         <View style={styles.createRow}>
           <TextInput
@@ -68,17 +52,29 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.row}>
-          <Chip label="+ New" onPress={() => setCreating(true)} accessibilityLabel="Create new topic" />
-          {ordered.map((topic) => (
-            <Chip
-              key={topic.id}
-              label={topic.name}
-              color={topic.color}
-              selected={topic.id === value}
-              onPress={() => onChange(topic.id === value ? null : topic.id)}
-            />
+          {selected ? (
+            <Chip label={selected.name} color={selected.color} selected onPress={() => onChange(null)} />
+          ) : (
+            <Chip label="No topic" selected onPress={() => onChange(null)} />
+          )}
+          {suggested ? (
+            <Pressable
+              onPress={() => onChange(suggested.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Use suggested topic ${suggested.name}`}
+              style={[styles.suggest, { borderColor: suggested.color }]}
+            >
+              <Text style={{ fontSize: 13 }}>✨</Text>
+              <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>
+                {suggested.name}?
+              </Text>
+            </Pressable>
+          ) : null}
+          <Chip label="+ New topic" onPress={() => setCreating(true)} accessibilityLabel="Create new topic" />
+          {rest.map((topic) => (
+            <Chip key={topic.id} label={topic.name} color={topic.color} onPress={() => onChange(topic.id)} />
           ))}
-          <Chip label="No topic" selected={value === null} onPress={() => onChange(null)} />
+          {selected ? <Chip label="No topic" onPress={() => onChange(null)} /> : null}
         </ScrollView>
       )}
     </View>
@@ -92,13 +88,12 @@ const styles = StyleSheet.create({
   suggest: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
-    borderWidth: 1.5,
+    minHeight: 40,
+    borderWidth: 2,
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 12,
-    marginBottom: 8,
-    gap: 6,
+    gap: 4,
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
 });
