@@ -8,7 +8,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { Db } from './db/client';
-import { openExpoDb } from './db/expoDb';
+import { openAppDb } from './db/openAppDb';
 import { migrate } from './db/migrations';
 import { DbProvider } from './hooks/useDb';
 import { useTheme } from './hooks/useTheme';
@@ -79,7 +79,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const opened = await openExpoDb();
+      const opened = await openAppDb();
       await migrate(opened);
       setDb(opened);
     })().catch((e) => setError(e instanceof Error ? e.message : String(e)));

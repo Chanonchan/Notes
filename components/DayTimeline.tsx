@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { deleteEntry, updateEntry } from '../db';
 import { groupByTopic, useDayEntries, useTopics } from '../hooks/useData';
 import { useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration } from '../services/dates';
+import { confirmDestructive } from '../services/dialogs';
 import type { DayKey, Entry, EntryType } from '../types';
 import { EntryRow } from './EntryRow';
 import { TypeMenu } from './TypeMenu';
@@ -31,11 +32,7 @@ export function DayTimeline({
   if (loading) return null;
   if (!entries.length) return <Text style={[styles.empty, { color: t.muted }]}>{emptyText}</Text>;
 
-  const confirmDelete = (e: Entry) =>
-    Alert.alert('Delete entry?', e.text, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => remove(e.id) },
-    ]);
+  const confirmDelete = (e: Entry) => confirmDestructive('Delete entry?', e.text, 'Delete', () => remove(e.id));
 
   return (
     <View style={styles.list}>

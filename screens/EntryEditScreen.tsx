@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DurationChips } from '../components/DurationChips';
 import { TopicPicker } from '../components/TopicPicker';
@@ -10,6 +10,7 @@ import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { addDays, formatDayLong, todayKey } from '../services/dates';
+import { confirmDestructive, showError } from '../services/dialogs';
 import type { DayKey, EntryType } from '../types';
 import type { RootScreenProps } from '../types/navigation';
 
@@ -69,7 +70,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       await save();
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Could not save', e instanceof Error ? e.message : String(e));
+      showError('Could not save', e);
     }
   };
 
@@ -128,17 +129,10 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
             label="Delete"
             kind="danger"
             onPress={() =>
-              Alert.alert('Delete entry?', text, [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Delete',
-                  style: 'destructive',
-                  onPress: async () => {
-                    await remove();
-                    navigation.goBack();
-                  },
-                },
-              ])
+              confirmDestructive('Delete entry?', text, 'Delete', async () => {
+                await remove();
+                navigation.goBack();
+              })
             }
           />
         ) : null}

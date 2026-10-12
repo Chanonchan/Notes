@@ -2,6 +2,18 @@
 
 A personal work log for your phone: record what you did in a few seconds, then review it by day, week or month. Built with React Native + Expo (TypeScript). Everything stays on your phone in SQLite: there's no account and no server.
 
+## Use it in your phone's browser
+
+**https://chanonchan.github.io/Notes/**
+
+Open it in Safari (iPhone) or Chrome (Android), then add it to your home screen so it opens like an app:
+- iPhone: tap Share → **Add to Home Screen**
+- Android: tap ⋮ → **Add to Home screen**
+
+Your log is saved in that browser on that phone (IndexedDB), so nothing is sent anywhere. Clearing the browser's website data deletes it, so use Export (milestone 5) for backups.
+
+Publishing a new version: run `npm run build:web`, then push the contents of `dist/` to the `gh-pages` branch.
+
 ## Run it on your phone (Expo Go)
 
 1. Install **Expo Go** from the App Store or Google Play.
