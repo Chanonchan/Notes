@@ -34,7 +34,7 @@ export function DayTimeline({
         const minutes = list.reduce((s, e) => s + (e.durationMinutes ?? 0), 0);
         return (
           <View key={topic?.id ?? 'none'}>
-            <GroupLabel dot={topic?.color ?? t.muted} right={minutes ? formatDuration(minutes) : undefined}>
+            <GroupLabel right={minutes ? formatDuration(minutes) : undefined}>
               {topic?.name ?? 'No topic'}
             </GroupLabel>
             <ListGroup inset={ENTRY_INSET}>

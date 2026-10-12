@@ -137,7 +137,7 @@ export function ListRow({
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.chip : 'transparent' }]}
     >
-      {leading ?? (icon ? <IconTile icon={icon} color={iconColor ?? (destructive ? t.danger : t.primary)} bg={iconBg} /> : null)}
+      {leading ?? (icon ? <IconTile icon={icon} color={iconColor ?? (destructive ? t.danger : t.text)} bg={iconBg} /> : null)}
       <View style={styles.body}>
         <Text style={[styles.rowTitle, { color: destructive ? t.danger : t.text }]} numberOfLines={titleLines}>
           {title}

@@ -101,9 +101,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       <GroupLabel>Details</GroupLabel>
       <ListGroup>
         <ListRow
-          icon="pricetag"
-          iconColor={topic?.color ?? t.muted}
-          iconBg={topic ? tint(topic.color, t.dark ? 0.22 : 0.14) : undefined}
+          icon="pricetag-outline"
           title="Topic"
           value={topic?.name ?? 'No topic'}
           onPress={() => setPickingTopic(true)}

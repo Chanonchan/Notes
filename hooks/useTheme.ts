@@ -8,11 +8,12 @@ const light = {
   text: '#1B1B1F',
   muted: '#6B6B76',
   border: '#E3E3E8',
-  primary: '#3B5BDB',
+  primary: '#2F54C9',
   onPrimary: '#FFFFFF',
   chip: '#ECECF1',
-  danger: '#D6336C',
-  types: { done: '#2F9E44', in_progress: '#1C7ED6', blocked: '#E03131', next: '#AE3EC9' } as Record<EntryType, string>,
+  danger: '#B42318',
+  // Neutral on purpose: types differ by icon shape; only Blocked gets a (muted) colour.
+  types: { done: '#9A9AA3', in_progress: '#1B1B1F', blocked: '#B42318', next: '#1B1B1F' } as Record<EntryType, string>,
 };
 
 const dark: typeof light = {
@@ -24,8 +25,8 @@ const dark: typeof light = {
   primary: '#748FFC',
   onPrimary: '#0B0B0E',
   chip: '#2A2A31',
-  danger: '#F06595',
-  types: { done: '#51CF66', in_progress: '#4DABF7', blocked: '#FF6B6B', next: '#DA77F2' },
+  danger: '#F08A7E',
+  types: { done: '#7C7C88', in_progress: '#F1F1F4', blocked: '#F08A7E', next: '#F1F1F4' },
 };
 
 export type Theme = typeof light & { dark: boolean };

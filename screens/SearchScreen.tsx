@@ -94,7 +94,6 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters} keyboardShouldPersistTaps="handled">
           <FilterButton
             label={topic ? topic.name : 'Any topic'}
-            dot={topic?.color}
             active={topicId !== undefined}
             onPress={() => setPickingTopic(true)}
             onClear={topicId !== undefined ? () => setTopicId(undefined) : undefined}
@@ -109,7 +108,7 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters} keyboardShouldPersistTaps="handled">
           <Chip label="All types" selected={!type} onPress={() => setType(undefined)} />
           {ENTRY_TYPES.map((x) => (
-            <Chip key={x} label={ENTRY_TYPE_LABELS[x]} color={t.types[x]} selected={type === x} onPress={() => setType(type === x ? undefined : x)} />
+            <Chip key={x} label={ENTRY_TYPE_LABELS[x]} selected={type === x} onPress={() => setType(type === x ? undefined : x)} />
           ))}
         </ScrollView>
       </View>

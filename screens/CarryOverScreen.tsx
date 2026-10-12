@@ -36,7 +36,7 @@ export function CarryOverScreen({ navigation }: RootScreenProps<'CarryOver'>) {
   if (carry === null) {
     return (
       <View style={[styles.done, { backgroundColor: t.bg }]}>
-        <Ionicons name="checkmark-circle" size={48} color={t.types.done} />
+        <Ionicons name="checkmark-circle" size={48} color={t.muted} />
         <Text style={[styles.title, { color: t.text, textAlign: 'center' }]}>Nothing to carry over</Text>
         <Button label="Close" kind="secondary" onPress={() => navigation.goBack()} style={{ alignSelf: 'stretch' }} />
       </View>

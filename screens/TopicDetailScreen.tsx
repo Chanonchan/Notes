@@ -3,7 +3,7 @@ import { useLayoutEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
-import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
+import { GroupLabel, IconTile, ListGroup, ListRow } from '../components/List';
 import { Button, Chip } from '../components/ui';
 import { listEntriesByTopic, listTopicStats, mergeTopics, renameTopic, setTopicArchived } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
@@ -56,7 +56,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const byDay = new Map<string, Entry[]>();
   for (const e of entries) byDay.set(e.day, [...(byDay.get(e.day) ?? []), e]);
   const others = all.filter((s) => s.topic.id !== topicId);
-  const topicTile = (color: string) => <IconTile icon="pricetag" color={color} bg={tint(color, t.dark ? 0.22 : 0.14)} />;
+  const topicTile = (_color?: string) => <IconTile icon="pricetag-outline" color={t.muted} />;
 
   const saveName = async () => {
     try {
@@ -89,7 +89,6 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
         </ListGroup>
       ) : null}
       <View style={styles.statsRow}>
-        <View style={[styles.dot, { backgroundColor: topic.color }]} />
         <Text style={{ color: t.muted, fontSize: 15, flex: 1 }}>
           {topicSubtitle(stats)}
           {topic.archived ? ' · archived' : ''}

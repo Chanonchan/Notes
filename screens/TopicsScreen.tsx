@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { GroupLabel, ListGroup, ListRow, ScreenHeader, tint } from '../components/List';
+import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { Chip } from '../components/ui';
 import { listTopicStats, type TopicStats } from '../db';
 import { useQuery } from '../hooks/useDb';
@@ -27,9 +27,8 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
   const row = (s: TopicStats) => (
     <ListRow
       key={s.topic.id}
-      icon="pricetag"
-      iconColor={s.topic.color}
-      iconBg={tint(s.topic.color, t.dark ? 0.22 : 0.14)}
+      icon="pricetag-outline"
+      iconColor={t.muted}
       title={s.topic.name}
       titleLines={1}
       subtitle={topicSubtitle(s)}

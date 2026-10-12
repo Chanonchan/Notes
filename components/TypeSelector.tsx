@@ -16,10 +16,10 @@ export function TypeSelector({ value, onChange }: { value: EntryType; onChange: 
             onPress={() => onChange(type)}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            style={[styles.segment, selected && { backgroundColor: t.types[type] }]}
+            style={[styles.segment, selected && [styles.selected, { backgroundColor: t.card }]]}
           >
             <Text
-              style={[styles.label, { color: selected ? '#FFFFFF' : t.text }]}
+              style={[styles.label, { color: selected ? t.text : t.muted }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
@@ -35,5 +35,6 @@ export function TypeSelector({ value, onChange }: { value: EntryType; onChange: 
 const styles = StyleSheet.create({
   track: { flexDirection: 'row', borderRadius: 14, padding: 3, gap: 3 },
   segment: { flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  selected: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
   label: { fontSize: 14, fontWeight: '700' },
 });

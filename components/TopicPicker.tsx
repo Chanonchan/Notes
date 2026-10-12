@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listTopicStats } from '../db';
-import { ListGroup, ListRow, tint } from './List';
+import { ListGroup, ListRow } from './List';
 import { useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatRelativeDay } from '../services/dates';
@@ -37,7 +37,7 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
         accessibilityLabel={`Topic: ${selected?.name ?? 'none'}. Tap to choose.`}
         style={({ pressed }) => [styles.button, { backgroundColor: pressed ? t.border : t.chip }]}
       >
-        <View style={[styles.dot, { backgroundColor: selected?.color ?? t.muted }]} />
+        <Ionicons name="pricetag-outline" size={16} color={t.muted} />
         <Text style={[styles.buttonText, { color: selected ? t.text : t.muted }]} numberOfLines={1}>
           {selected?.name ?? 'Choose topic'}
         </Text>
@@ -49,7 +49,7 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
           onPress={() => onChange(suggested.id)}
           accessibilityRole="button"
           accessibilityLabel={`Use suggested topic ${suggested.name}`}
-          style={[styles.suggest, { borderColor: suggested.color }]}
+          style={[styles.suggest, { borderColor: t.border }]}
         >
           <Text style={{ fontSize: 13 }}>✨</Text>
           <Text style={{ color: t.text, fontSize: 15, fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
@@ -162,9 +162,8 @@ export function TopicSheet({
             {filtered.map((s) => (
               <ListRow
                 key={s.topic.id}
-                icon="pricetag"
-                iconColor={s.topic.color}
-                iconBg={tint(s.topic.color, t.dark ? 0.22 : 0.14)}
+                icon="pricetag-outline"
+                iconColor={t.muted}
                 title={s.topic.name}
                 titleLines={1}
                 accessibilityLabel={s.topic.name}

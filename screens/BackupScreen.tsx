@@ -114,8 +114,7 @@ export function BackupScreen(_: RootScreenProps<'Backup'>) {
       <ListGroup>
         <ListRow
           icon={persistent === false ? 'warning' : 'shield-checkmark'}
-          iconColor={persistent === false ? t.types.blocked : t.types.done}
-          iconBg={tint(persistent === false ? t.types.blocked : t.types.done, t.dark ? 0.22 : 0.14)}
+          iconColor={persistent === false ? t.types.blocked : t.text}
           title="Saved on this phone"
           subtitle={[
             stats ? `${stats.entries} ${stats.entries === 1 ? 'entry' : 'entries'} · ${stats.topics} ${stats.topics === 1 ? 'topic' : 'topics'}` : null,
@@ -132,7 +131,7 @@ export function BackupScreen(_: RootScreenProps<'Backup'>) {
       </Text>
 
       {notice ? (
-        <View style={[styles.notice, { backgroundColor: tint(notice.ok ? t.types.done : t.types.blocked, t.dark ? 0.25 : 0.12) }]}>
+        <View style={[styles.notice, { backgroundColor: t.chip, borderLeftWidth: 3, borderLeftColor: notice.ok ? t.text : t.types.blocked }]}>
           <Text style={{ color: t.text, fontSize: 15, lineHeight: 21 }}>{notice.text}</Text>
         </View>
       ) : null}

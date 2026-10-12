@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, formatTime } from '../services/dates';
 import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
-import { IconTile, tint, type IconName } from './List';
+import { IconTile, type IconName } from './List';
 
 /** Distinct shapes per type, so the type never relies on colour alone. */
 export const TYPE_ICONS: Record<EntryType, IconName> = {
@@ -24,7 +24,7 @@ export function TypeTile({ type, onPress }: { type: EntryType; onPress?: () => v
     <IconTile
       icon={TYPE_ICONS[type]}
       color={t.types[type]}
-      bg={tint(t.types[type], t.dark ? 0.22 : 0.14)}
+      bg={t.chip}
       onPress={onPress}
       label={`Type: ${ENTRY_TYPE_LABELS[type]}. Tap to change.`}
     />

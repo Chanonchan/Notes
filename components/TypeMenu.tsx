@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { TAP, useTheme } from '../hooks/useTheme';
 import { ENTRY_TYPES, ENTRY_TYPE_LABELS, type EntryType } from '../types';
+import { TYPE_ICONS } from './EntryRow';
 
 /** Bottom sheet for quickly changing an entry's type, or deleting it. */
 export function TypeMenu({
@@ -30,7 +32,7 @@ export function TypeMenu({
               accessibilityRole="button"
               style={({ pressed }) => [styles.item, { backgroundColor: pressed ? t.chip : 'transparent' }]}
             >
-              <View style={[styles.dot, { backgroundColor: t.types[type] }]} />
+              <Ionicons name={TYPE_ICONS[type]} size={22} color={t.types[type]} />
               <Text style={[styles.label, { color: t.text, fontWeight: type === current ? '800' : '500' }]}>
                 {ENTRY_TYPE_LABELS[type]}
                 {type === current ? '  ✓' : ''}

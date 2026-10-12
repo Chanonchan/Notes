@@ -238,7 +238,6 @@ function TopicSummaryCard({ s, summary }: { s: TopicSummary; summary: Summary })
     <ListGroup style={styles.topicCard}>
       <View style={styles.topicInner}>
         <View style={styles.topicHead}>
-          <View style={[styles.topicDot, { backgroundColor: s.topic?.color ?? t.muted }]} />
           <Text style={[styles.topicName, { color: t.text }]} numberOfLines={1}>
             {s.topic?.name ?? 'No topic'}
           </Text>
