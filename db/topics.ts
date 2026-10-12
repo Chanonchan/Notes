@@ -123,7 +123,7 @@ export async function listTopicStats(db: Db, opts: { includeArchived?: boolean }
      FROM topics t LEFT JOIN entries e ON e.topic_id = t.id
      ${opts.includeArchived ? '' : 'WHERE t.archived = 0'}
      GROUP BY t.id
-     ORDER BY t.archived, last_day IS NULL, last_day DESC, t.name COLLATE NOCASE`,
+     ORDER BY t.archived, last_day IS NULL, last_day DESC, MAX(e.created_at) DESC, t.name COLLATE NOCASE`,
   );
   return rows.map((r) => ({
     topic: toTopic(r),
