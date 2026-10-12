@@ -1,0 +1,17 @@
+{
+  "name": "DayLog",
+  "short_name": "DayLog",
+  "description": "A quick personal work log with daily, weekly and monthly summaries.",
+  "id": "/Notes/",
+  "start_url": "/Notes/",
+  "scope": "/Notes/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F7F5",
+  "theme_color": "#F7F7F5",
+  "icons": [
+    { "src": "/Notes/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/Notes/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/Notes/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
