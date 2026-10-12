@@ -16,6 +16,7 @@ import { CaptureScreen } from './screens/CaptureScreen';
 import { comingSoon } from './screens/ComingSoonScreen';
 import { EntryEditScreen } from './screens/EntryEditScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
+import { SummaryScreen } from './screens/SummaryScreen';
 import { TopicDetailScreen } from './screens/TopicDetailScreen';
 import { TopicsScreen } from './screens/TopicsScreen';
 import type { RootStackParamList, TabParamList } from './types/navigation';
@@ -32,7 +33,6 @@ const TAB_ICONS: Record<keyof TabParamList, IconName> = {
   More: 'ellipsis-horizontal',
 };
 
-const SummaryScreen = comingSoon('Summaries', 4);
 const MoreScreen = comingSoon('Search, settings & export', 3);
 
 function Tabs() {
