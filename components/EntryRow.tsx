@@ -1,9 +1,30 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, formatTime } from '../services/dates';
-import { ENTRY_TYPE_LABELS, type Entry } from '../types';
+import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
+import { IconTile, ListRow, tint, type IconName } from './List';
 
+/** Distinct shapes per type, so the type never relies on colour alone. */
+export const TYPE_ICONS: Record<EntryType, IconName> = {
+  done: 'checkmark-circle',
+  in_progress: 'time',
+  blocked: 'alert-circle',
+  next: 'arrow-forward-circle',
+};
+
+export function TypeTile({ type, onPress }: { type: EntryType; onPress?: () => void }) {
+  const t = useTheme();
+  return (
+    <IconTile
+      icon={TYPE_ICONS[type]}
+      color={t.types[type]}
+      bg={tint(t.types[type], t.dark ? 0.22 : 0.14)}
+      onPress={onPress}
+      label={`Type: ${ENTRY_TYPE_LABELS[type]}. Tap to change.`}
+    />
+  );
+}
+
+/** One entry as a list row: type tile · text · "Done · 09:30 · 1h · #tag". */
 export function EntryRow({
   entry,
   onPress,
@@ -13,53 +34,28 @@ export function EntryRow({
 }: {
   entry: Entry;
   onPress: () => void;
-  /** Tap on the type badge (or long-press the row) — quick type change. */
+  /** Tap on the type tile (or long-press the row) — quick type change. */
   onTypePress: () => void;
   showTime?: boolean;
-  /** Extra context under the text, e.g. topic name in search results. */
+  /** Extra context, e.g. the topic name in search results. */
   subtitle?: string;
 }) {
-  const t = useTheme();
-  const color = t.types[entry.type];
+  const details = [
+    ENTRY_TYPE_LABELS[entry.type],
+    subtitle,
+    showTime ? formatTime(entry.createdAt) : null,
+    entry.durationMinutes ? formatDuration(entry.durationMinutes) : null,
+    ...entry.tags.map((x) => `#${x}`),
+  ].filter(Boolean);
+
   return (
-    <Pressable
+    <ListRow
+      leading={<TypeTile type={entry.type} onPress={onTypePress} />}
+      title={entry.text}
+      subtitle={details.join(' · ')}
       onPress={onPress}
       onLongPress={onTypePress}
-      accessibilityRole="button"
       accessibilityHint="Opens the entry for editing. Long-press to change its type."
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.chip : 'transparent' }]}
-    >
-      {showTime ? <Text style={[styles.time, { color: t.muted }]}>{formatTime(entry.createdAt)}</Text> : null}
-      <View style={styles.body}>
-        <Text style={[styles.text, { color: t.text }]}>{entry.text}</Text>
-        {subtitle ? <Text style={[styles.meta, { color: t.muted }]}>{subtitle}</Text> : null}
-        {entry.durationMinutes || entry.tags.length ? (
-          <Text style={[styles.meta, { color: t.muted }]}>
-            {[entry.durationMinutes ? formatDuration(entry.durationMinutes) : null, ...entry.tags.map((x) => `#${x}`)]
-              .filter(Boolean)
-              .join('  ·  ')}
-          </Text>
-        ) : null}
-      </View>
-      <Pressable
-        onPress={onTypePress}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel={`Type: ${ENTRY_TYPE_LABELS[entry.type]}. Tap to change.`}
-        style={[styles.badge, { borderColor: color }]}
-      >
-        <Text style={[styles.badgeText, { color }]}>{ENTRY_TYPE_LABELS[entry.type]}</Text>
-      </Pressable>
-    </Pressable>
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 10 },
-  time: { fontSize: 13, width: 42, fontVariant: ['tabular-nums'] },
-  body: { flex: 1 },
-  text: { fontSize: 16, lineHeight: 22 },
-  meta: { fontSize: 13, marginTop: 2 },
-  badge: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-});

@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { DurationChips } from '../components/DurationChips';
-import { TopicPicker } from '../components/TopicPicker';
+import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
+import { TopicSheet } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { Button, Chip, SectionTitle } from '../components/ui';
+import { Button } from '../components/ui';
 import { createEntry, createTopic, deleteEntry, getEntry, getLastTopicId, updateEntry } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
@@ -28,6 +29,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const [duration, setDuration] = useState<number | null>(null);
   const [tags, setTags] = useState('');
   const [day, setDay] = useState<DayKey>(route.params.day ?? todayKey());
+  const [pickingTopic, setPickingTopic] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: isNew ? 'New entry' : 'Edit entry' });
@@ -79,60 +81,84 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
     }
   };
 
+  const topic = topics.find((x) => x.id === topicId);
+
   return (
-    <ScrollView
-      style={{ backgroundColor: t.bg }}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        autoFocus={isNew}
-        multiline
-        placeholder="What did you do?"
-        placeholderTextColor={t.muted}
-        style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
-        accessibilityLabel="Entry text"
-      />
-
-      <SectionTitle>Day</SectionTitle>
-      <View style={styles.dayRow}>
-        <Chip label="◀" accessibilityLabel="Previous day" onPress={() => setDay(addDays(day, -1))} />
-        <Text style={[styles.day, { color: t.text }]}>{formatDayLong(day)}</Text>
-        <Chip
-          label="▶"
-          accessibilityLabel="Next day"
-          onPress={() => day < today && setDay(addDays(day, 1))}
+    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ListGroup>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          autoFocus={isNew}
+          multiline
+          placeholder="What did you do?"
+          placeholderTextColor={t.muted}
+          style={[styles.input, { color: t.text }]}
+          accessibilityLabel="Entry text"
         />
-      </View>
+      </ListGroup>
 
-      <SectionTitle>Topic</SectionTitle>
-      <TopicPicker topics={topics} value={topicId} onChange={setTopicId} onCreate={addTopic} />
+      <GroupLabel>Details</GroupLabel>
+      <ListGroup>
+        <ListRow
+          icon="pricetag"
+          iconColor={topic?.color ?? t.muted}
+          iconBg={topic ? tint(topic.color, t.dark ? 0.22 : 0.14) : undefined}
+          title="Topic"
+          value={topic?.name ?? 'No topic'}
+          onPress={() => setPickingTopic(true)}
+          accessibilityLabel={`Topic: ${topic?.name ?? 'none'}. Tap to choose.`}
+        />
+        <ListRow
+          icon="calendar"
+          title="Day"
+          subtitle={formatDayLong(day)}
+          chevron={false}
+          right={
+            <View style={styles.dayButtons}>
+              <IconTile icon="chevron-back" color={t.text} onPress={() => setDay(addDays(day, -1))} label="Previous day" />
+              <IconTile
+                icon="chevron-forward"
+                color={day < today ? t.text : t.border}
+                onPress={() => day < today && setDay(addDays(day, 1))}
+                label="Next day"
+              />
+            </View>
+          }
+        />
+      </ListGroup>
 
-      <SectionTitle>Type</SectionTitle>
+      <GroupLabel>Type</GroupLabel>
       <TypeSelector value={type} onChange={setType} />
 
-      <SectionTitle>Time spent</SectionTitle>
+      <GroupLabel>Time spent</GroupLabel>
       <DurationChips value={duration} onChange={setDuration} />
 
-      <SectionTitle>Tags</SectionTitle>
-      <TextInput
-        value={tags}
-        onChangeText={setTags}
-        placeholder="comma, separated"
-        placeholderTextColor={t.muted}
-        autoCapitalize="none"
-        style={[styles.tags, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
-        accessibilityLabel="Tags"
-      />
+      <GroupLabel>Tags</GroupLabel>
+      <ListGroup>
+        <View style={styles.tagsRow}>
+          <IconTile icon="pricetags-outline" color={t.primary} />
+          <TextInput
+            value={tags}
+            onChangeText={setTags}
+            placeholder="comma, separated"
+            placeholderTextColor={t.muted}
+            autoCapitalize="none"
+            style={[styles.tags, { color: t.text }]}
+            accessibilityLabel="Tags"
+          />
+        </View>
+      </ListGroup>
 
-      <View style={styles.actions}>
-        <Button label="Save" onPress={onSave} disabled={!text.trim()} />
-        {!isNew ? (
-          <Button
-            label="Delete"
-            kind="danger"
+      <Button label="Save" onPress={onSave} disabled={!text.trim()} style={styles.save} />
+      {!isNew ? (
+        <ListGroup style={{ marginTop: 16 }}>
+          <ListRow
+            icon="trash-outline"
+            title="Delete entry"
+            destructive
+            chevron={false}
+            iconBg={tint(t.danger, 0.12)}
             onPress={() =>
               confirmDestructive('Delete entry?', text, 'Delete', async () => {
                 await remove();
@@ -140,17 +166,32 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
               })
             }
           />
-        ) : null}
-      </View>
+        </ListGroup>
+      ) : null}
+
+      <TopicSheet
+        visible={pickingTopic}
+        value={topicId}
+        onClose={() => setPickingTopic(false)}
+        onPick={(id) => {
+          setTopicId(id);
+          setPickingTopic(false);
+        }}
+        onCreate={async (name) => {
+          const created = await addTopic(name);
+          setTopicId(created.id);
+          setPickingTopic(false);
+        }}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  input: { minHeight: 96, fontSize: 18, borderWidth: 1, borderRadius: 12, padding: 12, textAlignVertical: 'top' },
-  dayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  day: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600' },
-  tags: { minHeight: 48, fontSize: 16, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12 },
-  actions: { gap: 12, marginTop: 28 },
+  input: { minHeight: 110, fontSize: 18, lineHeight: 25, padding: 14, textAlignVertical: 'top' },
+  dayButtons: { flexDirection: 'row', gap: 8 },
+  tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 60 },
+  tags: { flex: 1, fontSize: 16, minHeight: 48 },
+  save: { marginTop: 24 },
 });

@@ -5,12 +5,13 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { DateRangeModal } from '../components/DateRangeModal';
 import { EntryRow } from '../components/EntryRow';
 import { TopicSheet } from '../components/TopicPicker';
-import { Card, Chip, SectionTitle } from '../components/ui';
+import { GroupLabel, ListGroup, ListRow } from '../components/List';
+import { Chip } from '../components/ui';
 import { isEmptySearch, searchEntries, type SearchFilters } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useQuery } from '../hooks/useDb';
 import { useEntryActions } from '../hooks/useEntryActions';
-import { TAP, useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks/useTheme';
 import { addDays, formatDayLong, formatRelativeDay, todayKey } from '../services/dates';
 import { ENTRY_TYPES, ENTRY_TYPE_LABELS, type DayKey, type Entry, type EntryType } from '../types';
 import type { RootScreenProps } from '../types/navigation';
@@ -134,11 +135,11 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
             </Text>
             {[...byDay].map(([day, list]) => (
               <View key={day}>
-                <SectionTitle>
+                <GroupLabel right={`${list.length}`}>
                   {formatRelativeDay(day, today)}
                   {formatRelativeDay(day, today) !== formatDayLong(day) ? ` · ${formatDayLong(day)}` : ''}
-                </SectionTitle>
-                <Card style={styles.dayCard}>
+                </GroupLabel>
+                <ListGroup>
                   {list.map((e) => {
                     const tp = e.topicId != null ? byId.get(e.topicId) : undefined;
                     return (
@@ -151,7 +152,7 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
                       />
                     );
                   })}
-                </Card>
+                </ListGroup>
               </View>
             ))}
           </>
@@ -246,19 +247,20 @@ function DatePresetSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
-      <View style={[styles.sheet, { backgroundColor: t.card }]}>
+      <View style={[styles.sheet, { backgroundColor: t.bg }]}>
         <Text style={[styles.sheetTitle, { color: t.text }]}>Filter by date</Text>
-        {options.map((o) => (
-          <Pressable
-            key={o.value}
-            onPress={() => onPick(o.value)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.sheetItem, { backgroundColor: pressed || o.value === value ? t.chip : 'transparent' }]}
-          >
-            <Text style={{ color: t.text, fontSize: 17, fontWeight: o.value === value ? '700' : '500', flex: 1 }}>{o.label}</Text>
-            {o.value === value ? <Ionicons name="checkmark" size={22} color={t.primary} /> : null}
-          </Pressable>
-        ))}
+        <ListGroup>
+          {options.map((o) => (
+            <ListRow
+              key={o.value}
+              icon={o.value === 'custom' ? 'calendar' : 'time-outline'}
+              title={o.label}
+              onPress={() => onPick(o.value)}
+              chevron={o.value === 'custom'}
+              right={o.value === value ? <Ionicons name="checkmark" size={22} color={t.primary} /> : undefined}
+            />
+          ))}
+        </ListGroup>
       </View>
     </Modal>
   );
@@ -276,9 +278,7 @@ const styles = StyleSheet.create({
   hintTitle: { fontSize: 18, fontWeight: '700' },
   hintText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   none: { textAlign: 'center', paddingVertical: 40, fontSize: 15 },
-  dayCard: { paddingHorizontal: 8, paddingVertical: 6 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 8 },
-  sheetItem: { minHeight: TAP + 4, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 12 },
 });

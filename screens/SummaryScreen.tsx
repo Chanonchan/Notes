@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateRangeModal } from '../components/DateRangeModal';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { TimeBarChart } from '../components/TimeBarChart';
-import { Button, Card, Chip, SectionTitle } from '../components/ui';
+import { TypeTile } from '../components/EntryRow';
+import { GroupLabel, ListGroup, ListRow, ScreenHeader, tint } from '../components/List';
+import { Button, Chip } from '../components/ui';
 import { useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, todayKey, weekdayShort } from '../services/dates';
@@ -38,7 +39,6 @@ const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'blocked', 'next'];
 
 export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const t = useTheme();
-  const insets = useSafeAreaInsets();
   const today = todayKey();
   const [range, setRange] = useState<SummaryRange>(() => rangeFor('week', today));
   const [picking, setPicking] = useState(false);
@@ -84,8 +84,9 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: t.text }]}>Summary</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <ScreenHeader title="Summary" />
+        <View style={styles.body}>
         <SegmentedControl options={KINDS} value={range.kind} onChange={setKind} />
 
         <View style={styles.rangeRow}>
@@ -118,19 +119,27 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
 
         {summary && summary.totals.entries ? (
           <>
-            <Pressable onPress={() => setShowText((v) => !v)} style={styles.previewToggle} accessibilityRole="button">
-              <Ionicons name={showText ? 'chevron-down' : 'chevron-forward'} size={16} color={t.muted} />
-              <Text style={{ color: t.muted, fontWeight: '700' }}>{showText ? 'Hide' : 'Preview'} text that will be copied</Text>
-            </Pressable>
-            {showText ? (
-              <Card>
-                <Text selectable style={[styles.preview, { color: t.text }]}>
-                  {text}
-                </Text>
-              </Card>
-            ) : null}
+            <GroupLabel>Copy & share</GroupLabel>
+            <ListGroup>
+              <ListRow
+                icon="document-text-outline"
+                title={showText ? 'Hide text preview' : 'Preview text'}
+                subtitle="Exactly what Copy and Share will send"
+                onPress={() => setShowText((v) => !v)}
+                chevron={false}
+                right={<Ionicons name={showText ? 'chevron-up' : 'chevron-down'} size={20} color={t.muted} />}
+              />
+              {showText ? (
+                <View style={styles.previewBox}>
+                  <Text selectable style={[styles.preview, { color: t.text }]}>
+                    {text}
+                  </Text>
+                </View>
+              ) : null}
+            </ListGroup>
           </>
         ) : null}
+        </View>
       </ScrollView>
 
       <View style={[styles.actions, { backgroundColor: t.card, borderTopColor: t.border }]}>
@@ -172,105 +181,86 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
       </View>
 
       {!totals.entries ? (
-        <Card style={{ marginTop: 16 }}>
-          <Text style={{ color: t.muted, fontSize: 15, textAlign: 'center', paddingVertical: 12 }}>
-            Nothing logged in this period.
-          </Text>
-        </Card>
+        <ListGroup style={{ marginTop: 16 }}>
+          <ListRow icon="cafe-outline" iconColor={t.muted} title="Nothing logged in this period" subtitle="Use ◀ to look at an earlier one." />
+        </ListGroup>
       ) : null}
 
       {showChart && totals.entries ? (
         <>
-          <SectionTitle>Time per topic</SectionTitle>
-          <Card>
+          <GroupLabel>Time per topic</GroupLabel>
+          <ListGroup style={styles.chartCard}>
             <TimeBarChart topics={summary.topics} />
-          </Card>
+          </ListGroup>
         </>
       ) : null}
 
-      {summary.topics.length ? <SectionTitle>By topic</SectionTitle> : null}
-      <View style={{ gap: 12 }}>
-        {summary.topics.map((s) => (
-          <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} />
-        ))}
-      </View>
+      {summary.topics.map((s) => (
+        <TopicSummaryGroup key={s.topic?.id ?? 'none'} s={s} summary={summary} />
+      ))}
 
       {summary.openItems.length ? (
         <>
-          <SectionTitle>Still open ({summary.openItems.length})</SectionTitle>
-          <Card style={{ paddingVertical: 4 }}>
+          <GroupLabel right={`${summary.openItems.length}`}>Still open</GroupLabel>
+          <ListGroup>
             {summary.openItems.map(({ entry, topic }) => (
-              <Pressable
+              <ListRow
                 key={entry.id}
+                leading={<TypeTile type={entry.type} />}
+                title={entry.text}
+                subtitle={[ENTRY_TYPE_LABELS[entry.type], topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
+                  .filter(Boolean)
+                  .join(' · ')}
                 onPress={() => onOpenEntry(entry.id)}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.openRow, { backgroundColor: pressed ? t.chip : 'transparent' }]}
-              >
-                <View style={[styles.badge, { borderColor: t.types[entry.type] }]}>
-                  <Text style={[styles.badgeText, { color: t.types[entry.type] }]}>{ENTRY_TYPE_LABELS[entry.type]}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontSize: 15 }}>{entry.text}</Text>
-                  <Text style={{ color: t.muted, fontSize: 13 }}>
-                    {[topic?.name ?? 'No topic', singleDay ? null : weekdayShort(entry.day) + ' ' + entry.day.slice(8).replace(/^0/, '')]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </Text>
-                </View>
-              </Pressable>
+              />
             ))}
-          </Card>
+          </ListGroup>
         </>
       ) : null}
 
       {summary.untouched.length ? (
         <>
-          <SectionTitle>Not touched ({summary.untouched.length})</SectionTitle>
-          <View style={styles.untouched}>
+          <GroupLabel right={`${summary.untouched.length}`}>Not touched</GroupLabel>
+          <ListGroup>
             {summary.untouched.map((topic) => (
-              <Chip key={topic.id} label={topic.name} color={topic.color} />
+              <ListRow
+                key={topic.id}
+                icon="pricetag"
+                iconColor={topic.color}
+                iconBg={tint(topic.color, t.dark ? 0.22 : 0.14)}
+                title={topic.name}
+                titleLines={1}
+                subtitle="Nothing logged in this period"
+              />
             ))}
-          </View>
+          </ListGroup>
         </>
       ) : null}
     </View>
   );
 }
 
-function TopicSummaryCard({ s, summary }: { s: TopicSummary; summary: Summary }) {
+function TopicSummaryGroup({ s, summary }: { s: TopicSummary; summary: Summary }) {
   const t = useTheme();
   const line = formatTopicLine(s, summary);
   const detail = line.slice(line.indexOf(': ') + 2);
+  const counts = TYPE_ORDER.filter((type) => s.counts[type])
+    .map((type) => `${ENTRY_TYPE_LABELS[type]} ${s.counts[type]}`)
+    .join(' · ');
   return (
-    <Card style={{ gap: 8 }}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.dot, { backgroundColor: s.topic?.color ?? t.muted }]} />
-        <Text style={[styles.cardTitle, { color: t.text }]} numberOfLines={1}>
-          {s.topic?.name ?? 'No topic'}
-        </Text>
-      </View>
-      <Text style={{ color: t.muted, fontSize: 14 }}>{detail}</Text>
-      <View style={styles.counts}>
-        {TYPE_ORDER.filter((type) => s.counts[type]).map((type) => (
-          <View key={type} style={styles.count}>
-            <View style={[styles.countDot, { backgroundColor: t.types[type] }]} />
-            <Text style={{ color: t.text, fontSize: 13, fontWeight: '600' }}>
-              {ENTRY_TYPE_LABELS[type]} {s.counts[type]}
-            </Text>
-          </View>
-        ))}
-      </View>
-      {TYPE_ORDER.filter((type) => s.items[type].length).map((type) => (
-        <View key={type} style={styles.items}>
-          <Text style={[styles.itemsLabel, { color: t.muted }]}>{ENTRY_TYPE_LABELS[type]}</Text>
-          {s.items[type].map((item, i) => (
-            <Text key={i} style={{ color: t.text, fontSize: 15, lineHeight: 21 }}>
-              • {item}
-            </Text>
-          ))}
-        </View>
-      ))}
-    </Card>
+    <>
+      <GroupLabel dot={s.topic?.color ?? t.muted} right={s.totalMinutes ? formatDuration(s.totalMinutes) : undefined}>
+        {s.topic?.name ?? 'No topic'}
+      </GroupLabel>
+      <ListGroup>
+        <ListRow icon="stats-chart" iconColor={t.muted} title={detail} subtitle={counts} />
+        {TYPE_ORDER.flatMap((type) =>
+          s.items[type].map((item, i) => (
+            <ListRow key={`${type}-${i}`} leading={<TypeTile type={type} />} title={item} subtitle={ENTRY_TYPE_LABELS[type]} />
+          )),
+        )}
+      </ListGroup>
+    </>
   );
 }
 
@@ -289,27 +279,16 @@ function Tile({ value, label, wide }: { value: string; label: string; wide?: boo
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: 12 },
+  container: { paddingBottom: 32 },
+  body: { paddingHorizontal: 16 },
+  chartCard: { padding: 14 },
+  previewBox: { padding: 14 },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   rangeLabel: { flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   rangeText: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
   tiles: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  tile: { flex: 1, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
+  tile: { flex: 1, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   tileValue: { fontSize: 19, fontWeight: '800' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 14, height: 14, borderRadius: 7 },
-  cardTitle: { fontSize: 18, fontWeight: '800', flexShrink: 1 },
-  counts: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  count: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  countDot: { width: 9, height: 9, borderRadius: 5 },
-  items: { gap: 2 },
-  itemsLabel: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
-  openRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 4, borderRadius: 10 },
-  badge: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-  untouched: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  previewToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 8, minHeight: 40 },
   preview: { fontFamily: 'monospace', fontSize: 13, lineHeight: 19 },
   actions: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
   notice: { position: 'absolute', top: -46, alignSelf: 'center', left: 24, right: 24, alignItems: 'center', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 12 },

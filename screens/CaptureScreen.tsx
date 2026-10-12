@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DayTimeline } from '../components/DayTimeline';
+import { ListGroup, ListRow, ScreenHeader, tint } from '../components/List';
 import { DurationChips } from '../components/DurationChips';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
@@ -22,7 +22,6 @@ import type { TabScreenProps } from '../types/navigation';
  */
 export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const t = useTheme();
-  const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const { topics } = useTopics();
@@ -94,47 +93,46 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
       style={{ flex: 1, backgroundColor: t.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 10, borderBottomColor: t.border }]}>
-        <View>
-          <Text style={[styles.title, { color: t.text }]}>Today</Text>
-          <Text style={[styles.date, { color: t.muted }]}>{formatDayLong(today)}</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.stats}>
-            <Text style={[styles.statBig, { color: t.text }]}>{entries.length}</Text>
-            <Text style={[styles.statSmall, { color: t.muted }]}>
-              {entries.length === 1 ? 'entry' : 'entries'}
-              {totalMinutes ? ` · ${formatDuration(totalMinutes)}` : ''}
-            </Text>
+      <ScreenHeader
+        title="Today"
+        subtitle={formatDayLong(today)}
+        right={
+          <View style={styles.headerRight}>
+            <View style={styles.stats}>
+              <Text style={[styles.statBig, { color: t.text }]}>{entries.length}</Text>
+              <Text style={[styles.statSmall, { color: t.muted }]}>
+                {entries.length === 1 ? 'entry' : 'entries'}
+                {totalMinutes ? ` · ${formatDuration(totalMinutes)}` : ''}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.navigate('Search')}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+              hitSlop={8}
+              style={[styles.iconBtn, { backgroundColor: t.card, borderColor: t.border }]}
+            >
+              <Ionicons name="search" size={22} color={t.primary} />
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => navigation.navigate('Search')}
-            accessibilityRole="button"
-            accessibilityLabel="Search"
-            hitSlop={8}
-            style={[styles.iconBtn, { backgroundColor: t.chip }]}
-          >
-            <Ionicons name="search" size={22} color={t.text} />
-          </Pressable>
-        </View>
-      </View>
+        }
+      />
 
       {carry && !carryDismissed ? (
-        <Pressable
-          onPress={() => navigation.navigate('CarryOver')}
-          accessibilityRole="button"
-          style={[styles.banner, { backgroundColor: t.card, borderColor: t.types.in_progress }]}
-        >
-          <Ionicons name="return-down-forward" size={20} color={t.types.in_progress} />
-          <Text style={{ color: t.text, fontSize: 15, flex: 1 }}>
-            <Text style={{ fontWeight: '700' }}>
-              {carry.items.length} open {carry.items.length === 1 ? 'item' : 'items'}
-            </Text>{' '}
-            from {formatRelativeDay(carry.fromDay, today).toLowerCase() === 'yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)}
-          </Text>
-          <Text style={{ color: t.primary, fontWeight: '700' }}>Review</Text>
-        </Pressable>
+        <View style={styles.banner}>
+          <ListGroup>
+            <ListRow
+              icon="return-down-forward"
+              iconColor={t.types.in_progress}
+              iconBg={tint(t.types.in_progress, t.dark ? 0.22 : 0.14)}
+              title={`${carry.items.length} open ${carry.items.length === 1 ? 'item' : 'items'} from ${
+                formatRelativeDay(carry.fromDay, today) === 'Yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)
+              }`}
+              subtitle="Tap to continue them today"
+              onPress={() => navigation.navigate('CarryOver')}
+            />
+          </ListGroup>
+        </View>
       ) : null}
 
       {/* Today's log */}
@@ -235,33 +233,13 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  title: { fontSize: 30, fontWeight: '800' },
-  date: { fontSize: 15, marginTop: 2 },
   stats: { alignItems: 'flex-end' },
   statBig: { fontSize: 26, fontWeight: '800' },
   statSmall: { fontSize: 13 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    minHeight: 52,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
-  list: { padding: 16, paddingBottom: 24, flexGrow: 1 },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  banner: { paddingHorizontal: 16, paddingTop: 4 },
+  list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },

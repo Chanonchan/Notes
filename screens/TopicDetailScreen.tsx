@@ -1,16 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { EntryRow } from '../components/EntryRow';
-import { Button, Card, Chip, SectionTitle } from '../components/ui';
+import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
+import { Button, Chip } from '../components/ui';
 import { listEntriesByTopic, listTopicStats, mergeTopics, renameTopic, setTopicArchived } from '../db';
-import { useQuery, useMutation } from '../hooks/useDb';
+import { useMutation, useQuery } from '../hooks/useDb';
 import { useEntryActions } from '../hooks/useEntryActions';
-import { TAP, useTheme } from '../hooks/useTheme';
-import { formatDayLong, formatDuration, formatRelativeDay } from '../services/dates';
+import { useTheme } from '../hooks/useTheme';
+import { formatDayLong, formatRelativeDay } from '../services/dates';
 import { confirmDestructive, showError } from '../services/dialogs';
 import type { Entry } from '../types';
 import type { RootScreenProps } from '../types/navigation';
+import { topicSubtitle } from './TopicsScreen';
 
 export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicDetail'>) {
   const t = useTheme();
@@ -45,6 +48,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const byDay = new Map<string, Entry[]>();
   for (const e of entries) byDay.set(e.day, [...(byDay.get(e.day) ?? []), e]);
   const others = all.filter((s) => s.topic.id !== topicId);
+  const topicTile = (color: string) => <IconTile icon="pricetag" color={color} bg={tint(color, t.dark ? 0.22 : 0.14)} />;
 
   const saveName = async () => {
     try {
@@ -57,10 +61,10 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 
   return (
     <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Card style={styles.summary}>
-        <View style={styles.nameRow}>
-          <View style={[styles.dot, { backgroundColor: topic.color }]} />
-          {renaming ? (
+      <ListGroup>
+        {renaming ? (
+          <View style={styles.renameRow}>
+            {topicTile(topic.color)}
             <TextInput
               autoFocus
               value={name}
@@ -70,51 +74,45 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
               style={[styles.nameInput, { color: t.text, borderColor: t.primary }]}
               accessibilityLabel="Topic name"
             />
-          ) : (
-            <Text style={[styles.name, { color: t.text }]}>{topic.name}</Text>
-          )}
-        </View>
-        <Text style={{ color: t.muted, fontSize: 15 }}>
-          {stats.entryCount} {stats.entryCount === 1 ? 'entry' : 'entries'} · {stats.daysActive}{' '}
-          {stats.daysActive === 1 ? 'day' : 'days'}
-          {stats.totalMinutes ? ` · ${formatDuration(stats.totalMinutes)}` : ''}
-          {stats.lastDay ? ` · last ${formatRelativeDay(stats.lastDay).toLowerCase()}` : ''}
+            <Chip label="Save name" selected onPress={saveName} />
+            <Pressable onPress={() => setRenaming(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancel">
+              <Ionicons name="close" size={22} color={t.muted} />
+            </Pressable>
+          </View>
+        ) : (
+          <ListRow leading={topicTile(topic.color)} title={topic.name} subtitle={topicSubtitle(stats)} />
+        )}
+        <ListRow
+          icon="pencil"
+          title="Rename"
+          onPress={() => {
+            setName(topic.name);
+            setRenaming(true);
+          }}
+        />
+        <ListRow icon="git-merge" title="Merge into another topic" subtitle="Move all entries, then delete this topic" onPress={() => setMerging(true)} />
+        <ListRow
+          icon={topic.archived ? 'arrow-undo' : 'archive'}
+          title={topic.archived ? 'Unarchive' : 'Archive'}
+          subtitle={topic.archived ? 'Show it in the topic list again' : 'Hide from the topic list; entries are kept'}
+          onPress={() => archive(!topic.archived)}
+          chevron={false}
+        />
+      </ListGroup>
+      {topic.archived ? (
+        <Text style={[styles.note, { color: t.muted }]}>
+          Archived: hidden from the topic picker and “Not touched” in summaries.
         </Text>
-        <View style={styles.actions}>
-          {renaming ? (
-            <>
-              <Chip label="Save name" selected onPress={saveName} />
-              <Chip label="Cancel" onPress={() => setRenaming(false)} />
-            </>
-          ) : (
-            <>
-              <Chip
-                label="Rename"
-                onPress={() => {
-                  setName(topic.name);
-                  setRenaming(true);
-                }}
-              />
-              <Chip label="Merge into…" onPress={() => setMerging(true)} />
-              <Chip label={topic.archived ? 'Unarchive' : 'Archive'} onPress={() => archive(!topic.archived)} />
-            </>
-          )}
-        </View>
-        {topic.archived ? (
-          <Text style={{ color: t.muted, fontSize: 13 }}>
-            Archived: hidden from the topic picker and “untouched topics” in summaries.
-          </Text>
-        ) : null}
-      </Card>
+      ) : null}
 
       {!entries.length ? <Text style={[styles.empty, { color: t.muted }]}>No entries in this topic yet.</Text> : null}
       {[...byDay].map(([day, list]) => (
         <View key={day}>
-          <SectionTitle>
+          <GroupLabel right={`${list.length}`}>
             {formatRelativeDay(day)}
             {formatRelativeDay(day) !== formatDayLong(day) ? ` · ${formatDayLong(day)}` : ''}
-          </SectionTitle>
-          <Card style={styles.dayCard}>
+          </GroupLabel>
+          <ListGroup>
             {list.map((e) => (
               <EntryRow
                 key={e.id}
@@ -123,25 +121,28 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
                 onTypePress={() => actions.open(e)}
               />
             ))}
-          </Card>
+          </ListGroup>
         </View>
       ))}
       {actions.menu}
 
-      <Modal visible={merging} transparent animationType="fade" onRequestClose={() => setMerging(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setMerging(false)}>
-          <View style={[styles.sheet, { backgroundColor: t.card }]}>
-            <Text style={[styles.sheetTitle, { color: t.text }]}>Merge “{topic.name}” into…</Text>
-            <Text style={{ color: t.muted, marginBottom: 8 }}>
-              All its entries move to the topic you pick, then “{topic.name}” is deleted.
-            </Text>
-            <ScrollView style={{ maxHeight: 360 }}>
-              {others.length ? (
-                others.map((o) => (
-                  <Pressable
+      <Modal visible={merging} transparent animationType="slide" onRequestClose={() => setMerging(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setMerging(false)} accessibilityLabel="Close" />
+        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+          <Text style={[styles.sheetTitle, { color: t.text }]}>Merge “{topic.name}” into…</Text>
+          <Text style={{ color: t.muted, marginBottom: 12 }}>
+            All its entries move to the topic you pick, then “{topic.name}” is deleted.
+          </Text>
+          <ScrollView style={{ maxHeight: 380 }}>
+            {others.length ? (
+              <ListGroup>
+                {others.map((o) => (
+                  <ListRow
                     key={o.topic.id}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [styles.option, { backgroundColor: pressed ? t.chip : 'transparent' }]}
+                    leading={topicTile(o.topic.color)}
+                    title={o.topic.name}
+                    titleLines={1}
+                    subtitle={topicSubtitle(o)}
                     onPress={() => {
                       setMerging(false);
                       confirmDestructive(
@@ -158,19 +159,15 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
                         },
                       );
                     }}
-                  >
-                    <View style={[styles.dot, { backgroundColor: o.topic.color }]} />
-                    <Text style={{ color: t.text, fontSize: 17 }}>{o.topic.name}</Text>
-                    <Text style={{ color: t.muted, marginLeft: 'auto' }}>{o.entryCount}</Text>
-                  </Pressable>
-                ))
-              ) : (
-                <Text style={{ color: t.muted, paddingVertical: 12 }}>There are no other topics to merge into.</Text>
-              )}
-            </ScrollView>
-            <Button label="Cancel" kind="secondary" onPress={() => setMerging(false)} style={{ marginTop: 8 }} />
-          </View>
-        </Pressable>
+                  />
+                ))}
+              </ListGroup>
+            ) : (
+              <Text style={{ color: t.muted, paddingVertical: 12 }}>There are no other topics to merge into.</Text>
+            )}
+          </ScrollView>
+          <Button label="Cancel" kind="secondary" onPress={() => setMerging(false)} style={{ marginTop: 12 }} />
+        </View>
       </Modal>
     </ScrollView>
   );
@@ -179,16 +176,11 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  summary: { gap: 10 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dot: { width: 14, height: 14, borderRadius: 7 },
-  name: { fontSize: 22, fontWeight: '800', flexShrink: 1 },
-  nameInput: { flex: 1, fontSize: 20, borderWidth: 2, borderRadius: 10, paddingHorizontal: 10, minHeight: 44 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
+  nameInput: { flex: 1, fontSize: 17, borderWidth: 2, borderRadius: 10, paddingHorizontal: 10, minHeight: 44 },
+  note: { fontSize: 13, marginTop: 8, paddingHorizontal: 4 },
   empty: { textAlign: 'center', paddingVertical: 32, fontSize: 15 },
-  dayCard: { paddingHorizontal: 8, paddingVertical: 6 },
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, paddingBottom: 32 },
-  sheetTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
-  option: { minHeight: TAP + 4, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8, borderRadius: 10 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
+  sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
 });

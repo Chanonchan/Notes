@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { TypeTile } from '../components/EntryRow';
+import { ListGroup, ListRow } from '../components/List';
 import { Button } from '../components/ui';
 import { continueItems, dismissCarryOver, getCarryOver } from '../db';
 import { useTopics } from '../hooks/useData';
@@ -61,35 +63,24 @@ export function CarryOverScreen({ navigation }: RootScreenProps<'CarryOver'>) {
           Continue {carry.items.length === 1 ? 'it' : 'them'} today?
         </Text>
 
-        <View style={styles.list}>
+        <ListGroup style={styles.list}>
           {carry.items.map((e) => {
             const on = selected.has(e.id);
             const topic = e.topicId != null ? byId.get(e.topicId) : undefined;
             return (
-              <Pressable
+              <ListRow
                 key={e.id}
+                leading={<Ionicons name={on ? 'checkbox' : 'square-outline'} size={28} color={on ? t.primary : t.muted} />}
+                title={e.text}
+                subtitle={`${ENTRY_TYPE_LABELS[e.type]} · ${topic?.name ?? 'No topic'}`}
                 onPress={() => toggle(e.id)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                style={[styles.item, { backgroundColor: t.card, borderColor: on ? t.primary : t.border }]}
-              >
-                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={26} color={on ? t.primary : t.muted} />
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ color: t.text, fontSize: 16 }}>{e.text}</Text>
-                  <View style={styles.meta}>
-                    <View style={[styles.badge, { borderColor: t.types[e.type] }]}>
-                      <Text style={[styles.badgeText, { color: t.types[e.type] }]}>{ENTRY_TYPE_LABELS[e.type]}</Text>
-                    </View>
-                    <View style={[styles.dot, { backgroundColor: topic?.color ?? t.muted }]} />
-                    <Text style={{ color: t.muted, fontSize: 13 }} numberOfLines={1}>
-                      {topic?.name ?? 'No topic'}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
+                chevron={false}
+                right={<TypeTile type={e.type} />}
+                accessibilityLabel={`${e.text}, ${on ? 'selected' : 'not selected'}`}
+              />
             );
           })}
-        </View>
+        </ListGroup>
         <Text style={[styles.note, { color: t.muted }]}>
           “Next” items are added as “In progress”. You can change any of them later.
         </Text>
@@ -122,12 +113,7 @@ const styles = StyleSheet.create({
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   title: { fontSize: 26, fontWeight: '800' },
   subtitle: { fontSize: 16, lineHeight: 23, marginTop: 6 },
-  list: { gap: 10, marginTop: 18 },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderRadius: 14, padding: 14, minHeight: 64 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  badge: { borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  dot: { width: 9, height: 9, borderRadius: 5, marginLeft: 4 },
+  list: { marginTop: 18 },
   note: { fontSize: 13, marginTop: 14 },
   actions: { gap: 10, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
 });

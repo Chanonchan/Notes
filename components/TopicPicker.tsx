@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listTopicStats } from '../db';
+import { ListGroup, ListRow, tint } from './List';
 import { useQuery } from '../hooks/useDb';
-import { TAP, useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks/useTheme';
 import { formatRelativeDay } from '../services/dates';
 import type { Topic } from '../types';
 
@@ -120,7 +121,7 @@ export function TopicSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close topic list" />
-      <View style={[styles.sheet, { backgroundColor: t.card, paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.sheet, { backgroundColor: t.bg, paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.sheetHeader}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>{title}</Text>
           <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
@@ -128,7 +129,7 @@ export function TopicSheet({
           </Pressable>
         </View>
 
-        <View style={[styles.search, { backgroundColor: t.bg, borderColor: t.border }]}>
+        <View style={[styles.search, { backgroundColor: t.card, borderColor: t.border }]}>
           <Ionicons name="search" size={18} color={t.muted} />
           <TextInput
             value={query}
@@ -142,89 +143,46 @@ export function TopicSheet({
           />
         </View>
 
-        <FlatList
-          data={filtered}
-          keyExtractor={(s) => String(s.topic.id)}
-          keyboardShouldPersistTaps="handled"
-          style={styles.list}
-          ListHeaderComponent={
-            <>
-              {q && !exact && onCreate ? (
-                <Row onPress={create} label={`Create “${query.trim()}”`} icon="add-circle" iconColor={t.primary} bold />
-              ) : null}
-              {!q ? (
-                <Row
-                  onPress={() => onPick(null)}
-                  label={noneLabel}
-                  dotColor={t.border}
-                  checked={value === null}
-                />
-              ) : null}
-            </>
-          }
-          ListEmptyComponent={
-            !q ? (
-              <Text style={[styles.hint, { color: t.muted }]}>
-                {onCreate ? 'No topics yet. Type a name above to create your first one.' : 'No topics yet.'}
-              </Text>
-            ) : null
-          }
-          renderItem={({ item: s }) => (
-            <Row
-              onPress={() => onPick(s.topic.id)}
-              label={s.topic.name}
-              sub={s.lastDay ? `Last used ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'Not used yet'}
-              dotColor={s.topic.color}
-              checked={s.topic.id === value}
-            />
-          )}
-        />
+        <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+          <ListGroup>
+            {q && !exact && onCreate ? (
+              <ListRow icon="add-circle" title={`Create “${query.trim()}”`} accessibilityLabel={`Create “${query.trim()}”`} onPress={create} chevron={false} />
+            ) : null}
+            {!q ? (
+              <ListRow
+                icon="remove-circle-outline"
+                iconColor={t.muted}
+                title={noneLabel}
+                accessibilityLabel={noneLabel}
+                onPress={() => onPick(null)}
+                chevron={false}
+                right={value === null ? <Ionicons name="checkmark" size={22} color={t.primary} /> : undefined}
+              />
+            ) : null}
+            {filtered.map((s) => (
+              <ListRow
+                key={s.topic.id}
+                icon="pricetag"
+                iconColor={s.topic.color}
+                iconBg={tint(s.topic.color, t.dark ? 0.22 : 0.14)}
+                title={s.topic.name}
+                titleLines={1}
+                accessibilityLabel={s.topic.name}
+                subtitle={s.lastDay ? `Last used ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'Not used yet'}
+                onPress={() => onPick(s.topic.id)}
+                chevron={false}
+                right={s.topic.id === value ? <Ionicons name="checkmark" size={22} color={t.primary} /> : undefined}
+              />
+            ))}
+          </ListGroup>
+          {!q && !filtered.length ? (
+            <Text style={[styles.hint, { color: t.muted }]}>
+              {onCreate ? 'No topics yet. Type a name above to create your first one.' : 'No topics yet.'}
+            </Text>
+          ) : null}
+        </ScrollView>
       </View>
     </Modal>
-  );
-}
-
-function Row({
-  label,
-  sub,
-  onPress,
-  dotColor,
-  icon,
-  iconColor,
-  checked,
-  bold,
-}: {
-  label: string;
-  sub?: string;
-  onPress: () => void;
-  dotColor?: string;
-  icon?: 'add-circle';
-  iconColor?: string;
-  checked?: boolean;
-  bold?: boolean;
-}) {
-  const t = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: !!checked }}
-      accessibilityLabel={label}
-      style={({ pressed }) => [styles.item, { backgroundColor: pressed || checked ? t.chip : 'transparent' }]}
-    >
-      {icon ? (
-        <Ionicons name={icon} size={24} color={iconColor} />
-      ) : (
-        <View style={[styles.bigDot, { backgroundColor: dotColor }]} />
-      )}
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.itemText, { color: icon ? t.primary : t.text, fontWeight: bold || checked ? '700' : '500' }]} numberOfLines={1}>
-          {label}
-        </Text>
-        {sub ? <Text style={{ color: t.muted, fontSize: 13 }}>{sub}</Text> : null}
-      </View>
-      {checked ? <Ionicons name="checkmark" size={22} color={t.primary} /> : null}
-    </Pressable>
   );
 }
 
@@ -278,8 +236,5 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 16, minHeight: 46 },
   list: { flexGrow: 0 },
-  item: { minHeight: TAP + 8, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, borderRadius: 12 },
-  bigDot: { width: 18, height: 18, borderRadius: 9, marginHorizontal: 3 },
-  itemText: { fontSize: 17 },
   hint: { textAlign: 'center', paddingVertical: 24, fontSize: 15 },
 });
