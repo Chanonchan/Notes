@@ -15,6 +15,9 @@ import { useTheme } from './hooks/useTheme';
 import { CaptureScreen } from './screens/CaptureScreen';
 import { comingSoon } from './screens/ComingSoonScreen';
 import { EntryEditScreen } from './screens/EntryEditScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
+import { TopicDetailScreen } from './screens/TopicDetailScreen';
+import { TopicsScreen } from './screens/TopicsScreen';
 import type { RootStackParamList, TabParamList } from './types/navigation';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -29,9 +32,7 @@ const TAB_ICONS: Record<keyof TabParamList, IconName> = {
   More: 'ellipsis-horizontal',
 };
 
-const HistoryScreen = comingSoon('History', 2);
 const SummaryScreen = comingSoon('Summaries', 4);
-const TopicsScreen = comingSoon('Topics', 2);
 const MoreScreen = comingSoon('Search, settings & export', 3);
 
 function Tabs() {
@@ -67,6 +68,7 @@ function Root() {
       <Stack.Navigator>
         <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name="EntryEdit" component={EntryEditScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="TopicDetail" component={TopicDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

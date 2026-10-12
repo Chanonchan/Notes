@@ -5,7 +5,7 @@ import { DurationChips } from '../components/DurationChips';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
 import { Button, Chip, SectionTitle } from '../components/ui';
-import { createEntry, createTopic, deleteEntry, getEntry, updateEntry } from '../db';
+import { createEntry, createTopic, deleteEntry, getEntry, getLastTopicId, updateEntry } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
@@ -32,6 +32,11 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   useLayoutEffect(() => {
     navigation.setOptions({ title: isNew ? 'New entry' : 'Edit entry' });
   }, [navigation, isNew]);
+
+  // New entries start on the last used topic, like quick capture.
+  useEffect(() => {
+    if (entryId == null) getLastTopicId(db).then(setTopicId);
+  }, [db, entryId]);
 
   useEffect(() => {
     if (entryId == null) return;

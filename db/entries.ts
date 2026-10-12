@@ -157,3 +157,22 @@ export async function recentTextsByTopic(db: Db, perTopic = 50): Promise<Map<num
   }
   return map;
 }
+
+/** All entries of a topic (null = entries without a topic), newest day first. */
+export async function listEntriesByTopic(db: Db, topicId: number | null): Promise<Entry[]> {
+  const rows = await db.all<EntryRow>(
+    `SELECT * FROM entries WHERE ${topicId === null ? 'topic_id IS NULL' : 'topic_id = ?'}
+     ORDER BY day DESC, created_at, id`,
+    topicId === null ? [] : [topicId],
+  );
+  return withTags(db, rows);
+}
+
+/** Number of entries per day in `from..to`, for the calendar. */
+export async function countEntriesByDay(db: Db, from: DayKey, to: DayKey): Promise<Map<DayKey, number>> {
+  const rows = await db.all<{ day: string; n: number }>(
+    'SELECT day, COUNT(*) AS n FROM entries WHERE day BETWEEN ? AND ? GROUP BY day',
+    [from, to],
+  );
+  return new Map(rows.map((r) => [r.day, r.n]));
+}

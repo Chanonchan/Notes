@@ -46,6 +46,24 @@ export function weekdayShort(day: DayKey): string {
   return WEEKDAYS[fromDayKey(day).getDay()];
 }
 
+export function monthName(month: number): string {
+  return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month];
+}
+
+/** Whole days from `a` to `b` (positive when b is later). */
+export function daysBetween(a: DayKey, b: DayKey): number {
+  return Math.round((fromDayKey(b).getTime() - fromDayKey(a).getTime()) / 86_400_000);
+}
+
+/** "Today", "Yesterday", "3 days ago", else "Sat, 11 Oct 2026". */
+export function formatRelativeDay(day: DayKey, today: DayKey = todayKey()): string {
+  const diff = daysBetween(day, today);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return `${diff} days ago`;
+  return formatDayLong(day);
+}
+
 /** e.g. "Sat, 11 Oct 2026" */
 export function formatDayLong(day: DayKey): string {
   const d = fromDayKey(day);

@@ -66,3 +66,70 @@ export async function createTopic(db: Db, name: string, color?: string): Promise
   ]);
   return { id: res.lastInsertRowId, name: clean, color: pick, archived: false, createdAt: now };
 }
+
+/** Renames a topic. Fails if another topic already has that name. */
+export async function renameTopic(db: Db, id: number, name: string): Promise<Topic> {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  if (!clean) throw new Error('Topic name is required');
+  const clash = await findTopicByName(db, clean);
+  if (clash && clash.id !== id) {
+    throw new Error(`A topic named "${clash.name}" already exists. Use Merge to combine them.`);
+  }
+  await db.run('UPDATE topics SET name = ? WHERE id = ?', [clean, id]);
+  const topic = await getTopic(db, id);
+  if (!topic) throw new Error(`Topic ${id} not found`);
+  return topic;
+}
+
+export async function setTopicArchived(db: Db, id: number, archived: boolean): Promise<void> {
+  await db.run('UPDATE topics SET archived = ? WHERE id = ?', [archived ? 1 : 0, id]);
+}
+
+/** Moves every entry of `sourceId` into `targetId`, then deletes the source topic. */
+export async function mergeTopics(db: Db, sourceId: number, targetId: number): Promise<void> {
+  if (sourceId === targetId) throw new Error('Cannot merge a topic into itself');
+  const [source, target] = await Promise.all([getTopic(db, sourceId), getTopic(db, targetId)]);
+  if (!source || !target) throw new Error('Topic not found');
+  await db.transaction(async () => {
+    await db.run('UPDATE entries SET topic_id = ? WHERE topic_id = ?', [targetId, sourceId]);
+    await db.run('DELETE FROM topics WHERE id = ?', [sourceId]);
+    if (target.archived && !source.archived) {
+      await db.run('UPDATE topics SET archived = 0 WHERE id = ?', [targetId]);
+    }
+  });
+  const last = await db.get<{ value: string }>("SELECT value FROM settings WHERE key = 'last_topic_id'");
+  if (last && Number(last.value) === sourceId) {
+    await db.run("UPDATE settings SET value = ? WHERE key = 'last_topic_id'", [String(targetId)]);
+  }
+}
+
+export interface TopicStats {
+  topic: Topic;
+  entryCount: number;
+  totalMinutes: number;
+  daysActive: number;
+  /** Most recent day with an entry, or null if none. */
+  lastDay: string | null;
+}
+
+/** Every topic with its totals, most recently active first. */
+export async function listTopicStats(db: Db, opts: { includeArchived?: boolean } = {}): Promise<TopicStats[]> {
+  const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null }>(
+    `SELECT t.*,
+            COUNT(e.id) AS entry_count,
+            COALESCE(SUM(e.duration_minutes), 0) AS total_minutes,
+            COUNT(DISTINCT e.day) AS days_active,
+            MAX(e.day) AS last_day
+     FROM topics t LEFT JOIN entries e ON e.topic_id = t.id
+     ${opts.includeArchived ? '' : 'WHERE t.archived = 0'}
+     GROUP BY t.id
+     ORDER BY t.archived, last_day IS NULL, last_day DESC, t.name COLLATE NOCASE`,
+  );
+  return rows.map((r) => ({
+    topic: toTopic(r),
+    entryCount: r.entry_count,
+    totalMinutes: r.total_minutes,
+    daysActive: r.days_active,
+    lastDay: r.last_day,
+  }));
+}

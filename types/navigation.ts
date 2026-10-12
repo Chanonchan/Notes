@@ -16,6 +16,7 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   /** Edit an entry, or create one on `day` when no id is given. */
   EntryEdit: { entryId?: number; day?: DayKey };
+  TopicDetail: { topicId: number };
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

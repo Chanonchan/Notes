@@ -1,15 +1,11 @@
-import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { deleteEntry, updateEntry } from '../db';
 import { groupByTopic, useDayEntries, useTopics } from '../hooks/useData';
-import { useMutation } from '../hooks/useDb';
+import { useEntryActions } from '../hooks/useEntryActions';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration } from '../services/dates';
-import { confirmDestructive } from '../services/dialogs';
-import type { DayKey, Entry, EntryType } from '../types';
+import type { DayKey, Entry } from '../types';
 import { EntryRow } from './EntryRow';
-import { TypeMenu } from './TypeMenu';
 import { Card } from './ui';
 
 /** A day's entries grouped by topic, with edit / type change / delete. */
@@ -25,14 +21,10 @@ export function DayTimeline({
   const t = useTheme();
   const { entries, loading } = useDayEntries(day);
   const { byId } = useTopics(true);
-  const [menuFor, setMenuFor] = useState<Entry | null>(null);
-  const setType = useMutation((db, id: number, type: EntryType) => updateEntry(db, id, { type }));
-  const remove = useMutation((db, id: number) => deleteEntry(db, id));
+  const actions = useEntryActions();
 
   if (loading) return null;
   if (!entries.length) return <Text style={[styles.empty, { color: t.muted }]}>{emptyText}</Text>;
-
-  const confirmDelete = (e: Entry) => confirmDestructive('Delete entry?', e.text, 'Delete', () => remove(e.id));
 
   return (
     <View style={styles.list}>
@@ -51,25 +43,12 @@ export function DayTimeline({
               </Text>
             </View>
             {list.map((e) => (
-              <EntryRow key={e.id} entry={e} onPress={() => onEdit(e)} onTypePress={() => setMenuFor(e)} />
+              <EntryRow key={e.id} entry={e} onPress={() => onEdit(e)} onTypePress={() => actions.open(e)} />
             ))}
           </Card>
         );
       })}
-      <TypeMenu
-        visible={!!menuFor}
-        current={menuFor?.type}
-        onClose={() => setMenuFor(null)}
-        onSelect={(type) => {
-          if (menuFor) setType(menuFor.id, type);
-          setMenuFor(null);
-        }}
-        onDelete={() => {
-          const e = menuFor;
-          setMenuFor(null);
-          if (e) confirmDelete(e);
-        }}
-      />
+      {actions.menu}
     </View>
   );
 }
