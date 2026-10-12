@@ -1,6 +1,11 @@
 import type { Db } from './client';
 
-export type SettingKey = 'last_topic_id' | 'reminder_time' | 'workdays' | 'last_carryover_day';
+export type SettingKey =
+  | 'last_topic_id'
+  | 'reminder_time'
+  | 'workdays'
+  | 'last_carryover_day'
+  | 'carryover_dismissed_day';
 
 export async function getSetting(db: Db, key: SettingKey): Promise<string | null> {
   const row = await db.get<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);

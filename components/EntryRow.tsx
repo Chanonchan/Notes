@@ -9,12 +9,15 @@ export function EntryRow({
   onPress,
   onTypePress,
   showTime = true,
+  subtitle,
 }: {
   entry: Entry;
   onPress: () => void;
   /** Tap on the type badge (or long-press the row) — quick type change. */
   onTypePress: () => void;
   showTime?: boolean;
+  /** Extra context under the text, e.g. topic name in search results. */
+  subtitle?: string;
 }) {
   const t = useTheme();
   const color = t.types[entry.type];
@@ -29,6 +32,7 @@ export function EntryRow({
       {showTime ? <Text style={[styles.time, { color: t.muted }]}>{formatTime(entry.createdAt)}</Text> : null}
       <View style={styles.body}>
         <Text style={[styles.text, { color: t.text }]}>{entry.text}</Text>
+        {subtitle ? <Text style={[styles.meta, { color: t.muted }]}>{subtitle}</Text> : null}
         {entry.durationMinutes || entry.tags.length ? (
           <Text style={[styles.meta, { color: t.muted }]}>
             {[entry.durationMinutes ? formatDuration(entry.durationMinutes) : null, ...entry.tags.map((x) => `#${x}`)]

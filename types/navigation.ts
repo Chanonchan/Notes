@@ -17,6 +17,9 @@ export type RootStackParamList = {
   /** Edit an entry, or create one on `day` when no id is given. */
   EntryEdit: { entryId?: number; day?: DayKey };
   TopicDetail: { topicId: number };
+  Search: undefined;
+  /** Morning prompt to continue yesterday's open items. */
+  CarryOver: undefined;
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

@@ -7,11 +7,11 @@ import { DayTimeline } from '../components/DayTimeline';
 import { DurationChips } from '../components/DurationChips';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopic, setLastTopicId } from '../db';
+import { createEntry, createTopic, getCarryOver, isCarryOverDismissed, setLastTopicId } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
-import { useMutation } from '../hooks/useDb';
+import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
-import { formatDayLong, formatDuration, todayKey } from '../services/dates';
+import { formatDayLong, formatDuration, formatRelativeDay, todayKey } from '../services/dates';
 import { ENTRY_TYPE_LABELS, type EntryType } from '../types';
 import type { TabScreenProps } from '../types/navigation';
 
@@ -29,6 +29,8 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const lastTopicId = useLastTopicId();
   const today = todayKey();
   const { entries } = useDayEntries(today);
+  const carry = useQuery((db) => getCarryOver(db, today), [today]).data;
+  const carryDismissed = useQuery((db) => isCarryOverDismissed(db, today), [today]).data;
 
   const [text, setText] = useState('');
   const [topicId, setTopicId] = useState<number | null>(null);
@@ -98,14 +100,42 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
           <Text style={[styles.title, { color: t.text }]}>Today</Text>
           <Text style={[styles.date, { color: t.muted }]}>{formatDayLong(today)}</Text>
         </View>
-        <View style={styles.stats}>
-          <Text style={[styles.statBig, { color: t.text }]}>{entries.length}</Text>
-          <Text style={[styles.statSmall, { color: t.muted }]}>
-            {entries.length === 1 ? 'entry' : 'entries'}
-            {totalMinutes ? ` · ${formatDuration(totalMinutes)}` : ''}
-          </Text>
+        <View style={styles.headerRight}>
+          <View style={styles.stats}>
+            <Text style={[styles.statBig, { color: t.text }]}>{entries.length}</Text>
+            <Text style={[styles.statSmall, { color: t.muted }]}>
+              {entries.length === 1 ? 'entry' : 'entries'}
+              {totalMinutes ? ` · ${formatDuration(totalMinutes)}` : ''}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => navigation.navigate('Search')}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            hitSlop={8}
+            style={[styles.iconBtn, { backgroundColor: t.chip }]}
+          >
+            <Ionicons name="search" size={22} color={t.text} />
+          </Pressable>
         </View>
       </View>
+
+      {carry && !carryDismissed ? (
+        <Pressable
+          onPress={() => navigation.navigate('CarryOver')}
+          accessibilityRole="button"
+          style={[styles.banner, { backgroundColor: t.card, borderColor: t.types.in_progress }]}
+        >
+          <Ionicons name="return-down-forward" size={20} color={t.types.in_progress} />
+          <Text style={{ color: t.text, fontSize: 15, flex: 1 }}>
+            <Text style={{ fontWeight: '700' }}>
+              {carry.items.length} open {carry.items.length === 1 ? 'item' : 'items'}
+            </Text>{' '}
+            from {formatRelativeDay(carry.fromDay, today).toLowerCase() === 'yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)}
+          </Text>
+          <Text style={{ color: t.primary, fontWeight: '700' }}>Review</Text>
+        </Pressable>
+      ) : null}
 
       {/* Today's log */}
       <ScrollView
@@ -218,6 +248,19 @@ const styles = StyleSheet.create({
   stats: { alignItems: 'flex-end' },
   statBig: { fontSize: 26, fontWeight: '800' },
   statSmall: { fontSize: 13 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
   list: { padding: 16, paddingBottom: 24, flexGrow: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },

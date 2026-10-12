@@ -176,3 +176,8 @@ export async function countEntriesByDay(db: Db, from: DayKey, to: DayKey): Promi
   );
   return new Map(rows.map((r) => [r.day, r.n]));
 }
+
+/** Runs a `SELECT * FROM entries …` query and maps rows (with tags) to Entry. */
+export async function queryEntries(db: Db, sql: string, params: SqlValue[] = []): Promise<Entry[]> {
+  return withTags(db, await db.all<EntryRow>(sql, params));
+}

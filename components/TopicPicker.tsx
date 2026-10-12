@@ -75,18 +75,25 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
   );
 }
 
-function TopicSheet({
+/** Bottom-sheet topic list. Also used as a filter (e.g. Search) with `onCreate` omitted. */
+export function TopicSheet({
   visible,
   value,
   onClose,
   onPick,
   onCreate,
+  noneLabel = 'No topic',
+  title = 'Choose topic',
 }: {
   visible: boolean;
   value: number | null;
   onClose: () => void;
   onPick: (id: number | null) => void;
-  onCreate: (name: string) => Promise<void>;
+  /** Omit to hide "Create …". */
+  onCreate?: (name: string) => Promise<void>;
+  /** Label of the first row, which picks `null`. */
+  noneLabel?: string;
+  title?: string;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -104,7 +111,7 @@ function TopicSheet({
     onClose();
   };
   const create = async () => {
-    if (!q) return;
+    if (!q || !onCreate) return;
     const name = query.trim();
     setQuery('');
     await onCreate(name);
@@ -115,7 +122,7 @@ function TopicSheet({
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close topic list" />
       <View style={[styles.sheet, { backgroundColor: t.card, paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.sheetHeader}>
-          <Text style={[styles.sheetTitle, { color: t.text }]}>Choose topic</Text>
+          <Text style={[styles.sheetTitle, { color: t.text }]}>{title}</Text>
           <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={26} color={t.muted} />
           </Pressable>
@@ -127,7 +134,7 @@ function TopicSheet({
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={() => (filtered.length === 1 && !exact ? onPick(filtered[0].topic.id) : create())}
-            placeholder="Search or type a new topic"
+            placeholder={onCreate ? 'Search or type a new topic' : 'Search topics'}
             placeholderTextColor={t.muted}
             returnKeyType="done"
             style={[styles.searchInput, { color: t.text }]}
@@ -142,13 +149,13 @@ function TopicSheet({
           style={styles.list}
           ListHeaderComponent={
             <>
-              {q && !exact ? (
+              {q && !exact && onCreate ? (
                 <Row onPress={create} label={`Create “${query.trim()}”`} icon="add-circle" iconColor={t.primary} bold />
               ) : null}
               {!q ? (
                 <Row
                   onPress={() => onPick(null)}
-                  label="No topic"
+                  label={noneLabel}
                   dotColor={t.border}
                   checked={value === null}
                 />
@@ -158,7 +165,7 @@ function TopicSheet({
           ListEmptyComponent={
             !q ? (
               <Text style={[styles.hint, { color: t.muted }]}>
-                No topics yet. Type a name above to create your first one.
+                {onCreate ? 'No topics yet. Type a name above to create your first one.' : 'No topics yet.'}
               </Text>
             ) : null
           }
