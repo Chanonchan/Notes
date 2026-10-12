@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DayTimeline } from '../components/DayTimeline';
+import { TYPE_ICONS } from '../components/EntryRow';
 import { ListGroup, ListRow, ScreenHeader, tint } from '../components/List';
 import { DurationChips } from '../components/DurationChips';
 import { TopicPicker } from '../components/TopicPicker';
@@ -95,26 +96,17 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
     >
       <ScreenHeader
         title="Today"
-        subtitle={formatDayLong(today)}
+        subtitle={[
+          formatDayLong(today),
+          entries.length ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}` : null,
+          totalMinutes ? formatDuration(totalMinutes) : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         right={
-          <View style={styles.headerRight}>
-            <View style={styles.stats}>
-              <Text style={[styles.statBig, { color: t.text }]}>{entries.length}</Text>
-              <Text style={[styles.statSmall, { color: t.muted }]}>
-                {entries.length === 1 ? 'entry' : 'entries'}
-                {totalMinutes ? ` · ${formatDuration(totalMinutes)}` : ''}
-              </Text>
-            </View>
-            <Pressable
-              onPress={() => navigation.navigate('Search')}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-              hitSlop={8}
-              style={[styles.iconBtn, { backgroundColor: t.card, borderColor: t.border }]}
-            >
-              <Ionicons name="search" size={22} color={t.primary} />
-            </Pressable>
-          </View>
+          <Pressable onPress={() => navigation.navigate('Search')} accessibilityRole="button" accessibilityLabel="Search" hitSlop={10} style={styles.iconBtn}>
+            <Ionicons name="search" size={24} color={t.text} />
+          </Pressable>
         }
       />
 
@@ -128,7 +120,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
               title={`${carry.items.length} open ${carry.items.length === 1 ? 'item' : 'items'} from ${
                 formatRelativeDay(carry.fromDay, today) === 'Yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)
               }`}
-              subtitle="Tap to continue them today"
               onPress={() => navigation.navigate('CarryOver')}
             />
           </ListGroup>
@@ -180,22 +171,14 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
             accessibilityRole="button"
             accessibilityLabel={`Type and time: ${optionsLabel}. Tap to ${showOptions ? 'hide' : 'change'}.`}
             hitSlop={6}
-            style={[
-              styles.optionsPill,
-              { backgroundColor: optionsChanged ? t.types[type] : t.chip },
-            ]}
+            style={[styles.typeBtn, { backgroundColor: showOptions || optionsChanged ? tint(t.types[type], t.dark ? 0.25 : 0.15) : t.chip }]}
           >
-            <View style={styles.optionsLabels}>
-              <Text style={[styles.optionsText, { color: optionsChanged ? '#FFFFFF' : t.text }]} numberOfLines={1}>
-                {ENTRY_TYPE_LABELS[type]}
-              </Text>
-              {duration ? (
-                <Text style={[styles.optionsSub, { color: '#FFFFFF' }]} numberOfLines={1}>
-                  {formatDuration(duration)}
-                </Text>
-              ) : null}
-            </View>
-            <Ionicons name={showOptions ? 'chevron-down' : 'chevron-up'} size={14} color={optionsChanged ? '#FFFFFF' : t.muted} />
+            <Ionicons name={TYPE_ICONS[type]} size={24} color={optionsChanged ? t.types[type] : t.muted} />
+            {duration ? (
+              <View style={[styles.durBadge, { backgroundColor: t.text }]}>
+                <Text style={[styles.durText, { color: t.bg }]}>{formatDuration(duration)}</Text>
+              </View>
+            ) : null}
           </Pressable>
 
           <TextInput
@@ -233,11 +216,10 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 }
 
 const styles = StyleSheet.create({
-  stats: { alignItems: 'flex-end' },
-  statBig: { fontSize: 26, fontWeight: '800' },
-  statSmall: { fontSize: 13 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  typeBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  durBadge: { position: 'absolute', bottom: -4, right: -6, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 },
+  durText: { fontSize: 11, fontWeight: '800' },
   banner: { paddingHorizontal: 16, paddingTop: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
@@ -246,18 +228,6 @@ const styles = StyleSheet.create({
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
   options: { gap: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  optionsPill: {
-    height: 48,
-    maxWidth: 150,
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  optionsLabels: { flexShrink: 1 },
-  optionsText: { fontSize: 13, fontWeight: '700' },
-  optionsSub: { fontSize: 12, fontWeight: '600', opacity: 0.9 },
   input: {
     flex: 1,
     minHeight: 48,

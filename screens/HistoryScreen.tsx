@@ -1,9 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CalendarGrid } from '../components/CalendarGrid';
 import { DayTimeline } from '../components/DayTimeline';
-import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
+import { ListGroup, ScreenHeader } from '../components/List';
 import { Chip } from '../components/ui';
 import { countEntriesByDay } from '../db';
 import { useQuery } from '../hooks/useDb';
@@ -66,19 +67,28 @@ export function HistoryScreen({ navigation }: TabScreenProps<'History'>) {
           </View>
         </ListGroup>
 
-        <GroupLabel right={selected !== today ? formatDayLong(selected) : undefined}>{formatRelativeDay(selected, today)}</GroupLabel>
-        <ListGroup>
-          <ListRow
-            icon="add-circle"
-            title="Add entry to this day"
-            subtitle="Forgot something? Log it here."
+        <View style={styles.dayHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.dayTitle, { color: t.text }]}>{formatRelativeDay(selected, today)}</Text>
+            {formatRelativeDay(selected, today) !== formatDayLong(selected) ? (
+              <Text style={{ color: t.muted, fontSize: 14 }}>{formatDayLong(selected)}</Text>
+            ) : null}
+          </View>
+          <Pressable
             onPress={() => navigation.navigate('EntryEdit', { day: selected })}
-          />
-        </ListGroup>
+            accessibilityRole="button"
+            accessibilityLabel="Add entry to this day"
+            hitSlop={8}
+            style={[styles.addBtn, { backgroundColor: t.chip }]}
+          >
+            <Ionicons name="add" size={20} color={t.primary} />
+            <Text style={{ color: t.primary, fontSize: 15, fontWeight: '700' }}>Add</Text>
+          </Pressable>
+        </View>
         <DayTimeline
           day={selected}
           onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
-          emptyText="Nothing logged this day."
+          emptyText="Nothing logged this day. Forgot something? Tap + Add."
         />
       </View>
     </ScrollView>
@@ -91,4 +101,7 @@ const styles = StyleSheet.create({
   calendarCard: { padding: 12 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   month: { fontSize: 18, fontWeight: '700' },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 24 },
+  dayTitle: { fontSize: 22, fontWeight: '800' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40, paddingHorizontal: 14, borderRadius: 20 },
 });

@@ -27,7 +27,18 @@ export function ScreenHeader({ title, subtitle, right }: { title: string; subtit
 }
 
 /** Small uppercase label above a group, with optional text on the right. */
-export function GroupLabel({ children, right, dot }: { children: ReactNode; right?: ReactNode; dot?: string }) {
+export function GroupLabel({
+  children,
+  right,
+  dot,
+  action,
+}: {
+  children: ReactNode;
+  right?: ReactNode;
+  dot?: string;
+  /** Small text button on the right, e.g. "+ Add". */
+  action?: { label: string; onPress: () => void; accessibilityLabel?: string };
+}) {
   const t = useTheme();
   return (
     <View style={styles.labelRow}>
@@ -36,19 +47,24 @@ export function GroupLabel({ children, right, dot }: { children: ReactNode; righ
         {children}
       </Text>
       {right ? <Text style={[styles.labelRight, { color: t.muted }]}>{right}</Text> : null}
+      {action ? (
+        <Pressable onPress={action.onPress} hitSlop={12} accessibilityRole="button" accessibilityLabel={action.accessibilityLabel ?? action.label}>
+          <Text style={[styles.labelAction, { color: t.primary }]}>{action.label}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 /** Rounded card holding rows, with hairline dividers between them. */
-export function ListGroup({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function ListGroup({ children, style, inset = 62 }: { children: ReactNode; style?: StyleProp<ViewStyle>; inset?: number }) {
   const t = useTheme();
   const items = Children.toArray(children).filter(isValidElement);
   return (
     <View style={[styles.group, { backgroundColor: t.card, borderColor: t.border }, style]}>
       {items.map((child, i) => (
         <Fragment key={child.key ?? i}>
-          {i > 0 ? <View style={[styles.divider, { backgroundColor: t.border }]} /> : null}
+          {i > 0 ? <View style={[styles.divider, { backgroundColor: t.border, marginLeft: inset }]} /> : null}
           {child}
         </Fragment>
       ))}
@@ -146,12 +162,13 @@ export function ListRow({
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingBottom: 12 },
   title: { fontSize: 28, fontWeight: '800' },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 8, paddingHorizontal: 4 },
-  labelDot: { width: 10, height: 10, borderRadius: 5 },
-  label: { flex: 1, fontSize: 13, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
-  labelRight: { fontSize: 13 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 22, marginBottom: 8, paddingHorizontal: 4 },
+  labelDot: { width: 8, height: 8, borderRadius: 4 },
+  label: { flex: 1, fontSize: 15, fontWeight: '600' },
+  labelRight: { fontSize: 14 },
+  labelAction: { fontSize: 15, fontWeight: '700' },
   group: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 62 },
+  divider: { height: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingHorizontal: 14, paddingVertical: 10 },
   tile: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 2 },

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DateRangeModal } from '../components/DateRangeModal';
-import { EntryRow } from '../components/EntryRow';
+import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
 import { TopicSheet } from '../components/TopicPicker';
 import { GroupLabel, ListGroup, ListRow } from '../components/List';
 import { Chip } from '../components/ui';
@@ -135,11 +135,11 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
             </Text>
             {[...byDay].map(([day, list]) => (
               <View key={day}>
-                <GroupLabel right={`${list.length}`}>
+                <GroupLabel>
                   {formatRelativeDay(day, today)}
                   {formatRelativeDay(day, today) !== formatDayLong(day) ? ` · ${formatDayLong(day)}` : ''}
                 </GroupLabel>
-                <ListGroup>
+                <ListGroup inset={ENTRY_INSET}>
                   {list.map((e) => {
                     const tp = e.topicId != null ? byId.get(e.topicId) : undefined;
                     return (

@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { TypeTile } from '../components/EntryRow';
 import { ListGroup, ListRow } from '../components/List';
 import { Button } from '../components/ui';
 import { continueItems, dismissCarryOver, getCarryOver } from '../db';
@@ -75,7 +74,6 @@ export function CarryOverScreen({ navigation }: RootScreenProps<'CarryOver'>) {
                 subtitle={`${ENTRY_TYPE_LABELS[e.type]} · ${topic?.name ?? 'No topic'}`}
                 onPress={() => toggle(e.id)}
                 chevron={false}
-                right={<TypeTile type={e.type} />}
                 accessibilityLabel={`${e.text}, ${on ? 'selected' : 'not selected'}`}
               />
             );

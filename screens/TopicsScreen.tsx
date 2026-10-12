@@ -12,7 +12,6 @@ import type { TabScreenProps } from '../types/navigation';
 export function topicSubtitle(s: TopicStats): string {
   const parts = [`${s.entryCount} ${s.entryCount === 1 ? 'entry' : 'entries'}`];
   if (s.totalMinutes) parts.push(formatDuration(s.totalMinutes));
-  if (s.daysActive) parts.push(`${s.daysActive} ${s.daysActive === 1 ? 'day' : 'days'}`);
   parts.push(s.lastDay ? `last ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'not used yet');
   return parts.join(' · ');
 }

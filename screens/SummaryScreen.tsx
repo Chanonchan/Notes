@@ -5,8 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DateRangeModal } from '../components/DateRangeModal';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { TimeBarChart } from '../components/TimeBarChart';
-import { TypeTile } from '../components/EntryRow';
-import { GroupLabel, ListGroup, ListRow, ScreenHeader, tint } from '../components/List';
+import { ENTRY_INSET, EntryRow, TypeIcon } from '../components/EntryRow';
+import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { Button, Chip } from '../components/ui';
 import { useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
@@ -26,7 +26,7 @@ import {
   type SummaryRange,
   type TopicSummary,
 } from '../services/summary';
-import { ENTRY_TYPE_LABELS, type EntryType } from '../types';
+import type { EntryType } from '../types';
 import type { TabScreenProps } from '../types/navigation';
 
 const KINDS: { value: RangeKind; label: string }[] = [
@@ -170,21 +170,22 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
   const t = useTheme();
   const { totals } = summary;
   const singleDay = summary.range.from === summary.range.to;
+  const totalsLine = [
+    `${totals.entries} ${totals.entries === 1 ? 'entry' : 'entries'}`,
+    totals.minutes ? formatDuration(totals.minutes) : null,
+    `${totals.topics} ${totals.topics === 1 ? 'topic' : 'topics'}`,
+    !singleDay ? `${totals.days} ${totals.days === 1 ? 'day' : 'days'}` : null,
+  ]
+    .filter(Boolean)
+    .join('  ·  ');
 
   return (
     <View>
-      <View style={styles.tiles}>
-        <Tile value={String(totals.entries)} label={totals.entries === 1 ? 'entry' : 'entries'} />
-        <Tile value={totals.minutes ? formatDuration(totals.minutes) : '—'} label="time" wide />
-        {!singleDay ? <Tile value={String(totals.days)} label={totals.days === 1 ? 'day' : 'days'} /> : null}
-        <Tile value={String(totals.topics)} label={totals.topics === 1 ? 'topic' : 'topics'} />
-      </View>
-
-      {!totals.entries ? (
-        <ListGroup style={{ marginTop: 16 }}>
-          <ListRow icon="cafe-outline" iconColor={t.muted} title="Nothing logged in this period" subtitle="Use ◀ to look at an earlier one." />
-        </ListGroup>
-      ) : null}
+      {totals.entries ? (
+        <Text style={[styles.totals, { color: t.text }]}>{totalsLine}</Text>
+      ) : (
+        <Text style={[styles.nothing, { color: t.muted }]}>Nothing logged in this period.</Text>
+      )}
 
       {showChart && totals.entries ? (
         <>
@@ -196,22 +197,23 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
       ) : null}
 
       {summary.topics.map((s) => (
-        <TopicSummaryGroup key={s.topic?.id ?? 'none'} s={s} summary={summary} />
+        <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} />
       ))}
 
       {summary.openItems.length ? (
         <>
-          <GroupLabel right={`${summary.openItems.length}`}>Still open</GroupLabel>
-          <ListGroup>
+          <GroupLabel>Still open</GroupLabel>
+          <ListGroup inset={ENTRY_INSET}>
             {summary.openItems.map(({ entry, topic }) => (
-              <ListRow
+              <EntryRow
                 key={entry.id}
-                leading={<TypeTile type={entry.type} />}
-                title={entry.text}
-                subtitle={[ENTRY_TYPE_LABELS[entry.type], topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
+                entry={entry}
+                showTime={false}
+                subtitle={[topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
                   .filter(Boolean)
                   .join(' · ')}
                 onPress={() => onOpenEntry(entry.id)}
+                onTypePress={() => onOpenEntry(entry.id)}
               />
             ))}
           </ListGroup>
@@ -220,61 +222,39 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
 
       {summary.untouched.length ? (
         <>
-          <GroupLabel right={`${summary.untouched.length}`}>Not touched</GroupLabel>
-          <ListGroup>
-            {summary.untouched.map((topic) => (
-              <ListRow
-                key={topic.id}
-                icon="pricetag"
-                iconColor={topic.color}
-                iconBg={tint(topic.color, t.dark ? 0.22 : 0.14)}
-                title={topic.name}
-                titleLines={1}
-                subtitle="Nothing logged in this period"
-              />
-            ))}
-          </ListGroup>
+          <GroupLabel>Not touched</GroupLabel>
+          <Text style={[styles.untouched, { color: t.muted }]}>{summary.untouched.map((x) => x.name).join(', ')}</Text>
         </>
       ) : null}
     </View>
   );
 }
 
-function TopicSummaryGroup({ s, summary }: { s: TopicSummary; summary: Summary }) {
+function TopicSummaryCard({ s, summary }: { s: TopicSummary; summary: Summary }) {
   const t = useTheme();
   const line = formatTopicLine(s, summary);
-  const detail = line.slice(line.indexOf(': ') + 2);
-  const counts = TYPE_ORDER.filter((type) => s.counts[type])
-    .map((type) => `${ENTRY_TYPE_LABELS[type]} ${s.counts[type]}`)
-    .join(' · ');
+  const detail = line.slice(line.indexOf(': ') + 2).replace(/, \d+h( \d+m)?$|, \d+m$/, '');
   return (
-    <>
-      <GroupLabel dot={s.topic?.color ?? t.muted} right={s.totalMinutes ? formatDuration(s.totalMinutes) : undefined}>
-        {s.topic?.name ?? 'No topic'}
-      </GroupLabel>
-      <ListGroup>
-        <ListRow icon="stats-chart" iconColor={t.muted} title={detail} subtitle={counts} />
+    <ListGroup style={styles.topicCard}>
+      <View style={styles.topicInner}>
+        <View style={styles.topicHead}>
+          <View style={[styles.topicDot, { backgroundColor: s.topic?.color ?? t.muted }]} />
+          <Text style={[styles.topicName, { color: t.text }]} numberOfLines={1}>
+            {s.topic?.name ?? 'No topic'}
+          </Text>
+          {s.totalMinutes ? <Text style={{ color: t.muted, fontSize: 15 }}>{formatDuration(s.totalMinutes)}</Text> : null}
+        </View>
+        <Text style={{ color: t.muted, fontSize: 14, marginBottom: 6 }}>{detail}</Text>
         {TYPE_ORDER.flatMap((type) =>
           s.items[type].map((item, i) => (
-            <ListRow key={`${type}-${i}`} leading={<TypeTile type={type} />} title={item} subtitle={ENTRY_TYPE_LABELS[type]} />
+            <View key={`${type}-${i}`} style={styles.item}>
+              <TypeIcon type={type} size={18} />
+              <Text style={{ color: t.text, fontSize: 15, lineHeight: 21, flex: 1 }}>{item}</Text>
+            </View>
           )),
         )}
-      </ListGroup>
-    </>
-  );
-}
-
-function Tile({ value, label, wide }: { value: string; label: string; wide?: boolean }) {
-  const t = useTheme();
-  return (
-    <View style={[styles.tile, { backgroundColor: t.card, borderColor: t.border }, wide && { flex: 1.5 }]}>
-      <Text style={[styles.tileValue, { color: t.text }]} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      <Text style={{ color: t.muted, fontSize: 12 }} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
+      </View>
+    </ListGroup>
   );
 }
 
@@ -282,13 +262,19 @@ const styles = StyleSheet.create({
   container: { paddingBottom: 32 },
   body: { paddingHorizontal: 16 },
   chartCard: { padding: 14 },
+  totals: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginTop: 14 },
+  nothing: { fontSize: 15, textAlign: 'center', marginTop: 24 },
+  topicCard: { marginTop: 14 },
+  topicInner: { padding: 14, gap: 4 },
+  topicHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topicDot: { width: 10, height: 10, borderRadius: 5 },
+  topicName: { flex: 1, fontSize: 17, fontWeight: '700' },
+  item: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 3 },
+  untouched: { fontSize: 15, lineHeight: 22, paddingHorizontal: 4 },
   previewBox: { padding: 14 },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   rangeLabel: { flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   rangeText: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
-  tiles: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  tile: { flex: 1, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
-  tileValue: { fontSize: 19, fontWeight: '800' },
   preview: { fontFamily: 'monospace', fontSize: 13, lineHeight: 19 },
   actions: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
   notice: { position: 'absolute', top: -46, alignSelf: 'center', left: 24, right: 24, alignItems: 'center', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 12 },

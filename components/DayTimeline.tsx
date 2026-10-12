@@ -5,7 +5,7 @@ import { useEntryActions } from '../hooks/useEntryActions';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration } from '../services/dates';
 import type { DayKey, Entry } from '../types';
-import { EntryRow } from './EntryRow';
+import { ENTRY_INSET, EntryRow } from './EntryRow';
 import { GroupLabel, ListGroup } from './List';
 
 /** A day's entries grouped by topic, with edit / type change / delete. */
@@ -34,10 +34,10 @@ export function DayTimeline({
         const minutes = list.reduce((s, e) => s + (e.durationMinutes ?? 0), 0);
         return (
           <View key={topic?.id ?? 'none'}>
-            <GroupLabel dot={topic?.color ?? t.muted} right={`${list.length}${minutes ? ` · ${formatDuration(minutes)}` : ''}`}>
+            <GroupLabel dot={topic?.color ?? t.muted} right={minutes ? formatDuration(minutes) : undefined}>
               {topic?.name ?? 'No topic'}
             </GroupLabel>
-            <ListGroup>
+            <ListGroup inset={ENTRY_INSET}>
               {list.map((e) => (
                 <EntryRow key={e.id} entry={e} onPress={() => onEdit(e)} onTypePress={() => actions.open(e)} />
               ))}
