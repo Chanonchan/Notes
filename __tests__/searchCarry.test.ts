@@ -88,7 +88,7 @@ describe('carry-over', () => {
     expect(await getCarryOver(db, '2026-10-12')).toBeNull();
   });
 
-  it('continues items to today, linked, with Next becoming In progress', async () => {
+  it('continues items to today, linked, keeping their type', async () => {
     await add(web, 'Write tests', '2026-10-09', 'next', ['qa']);
     await add(ops, 'Waiting on vendor', '2026-10-09', 'blocked');
     const c = (await getCarryOver(db, '2026-10-12'))!;
@@ -96,7 +96,7 @@ describe('carry-over', () => {
     const created = await continueItems(db, c.items, '2026-10-12');
     expect(created.map((e) => [e.text, e.type, e.day])).toEqual([
       ['Waiting on vendor', 'blocked', '2026-10-12'],
-      ['Write tests', 'in_progress', '2026-10-12'],
+      ['Write tests', 'next', '2026-10-12'],
     ]);
     expect(created[1].carriedFromId).toBe(c.items[1].id);
     expect(created[1].tags).toEqual(['qa']);

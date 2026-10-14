@@ -46,19 +46,25 @@ export function EntryRow({
   onPress,
   onTypePress,
   showTime = true,
+  showType = true,
   subtitle,
+  onCheck,
 }: {
   entry: Entry;
   onPress: () => void;
   /** Tap on the type icon (or long-press the row) — quick type change. */
   onTypePress: () => void;
   showTime?: boolean;
+  /** Hide the type word when the context already says it (e.g. the Next steps box). */
+  showType?: boolean;
   /** Extra context, e.g. the topic name in search results. */
   subtitle?: string;
+  /** Shows a checkbox on the right; tapping it marks the entry done. */
+  onCheck?: () => void;
 }) {
   const t = useTheme();
   const meta = [
-    entry.type !== 'done' ? ENTRY_TYPE_LABELS[entry.type] : null,
+    showType && entry.type !== 'done' ? ENTRY_TYPE_LABELS[entry.type] : null,
     subtitle,
     showTime ? formatTime(entry.createdAt) : null,
     entry.durationMinutes ? formatDuration(entry.durationMinutes) : null,
@@ -90,6 +96,18 @@ export function EntryRow({
           </Text>
         ) : null}
       </View>
+      {onCheck ? (
+        <Pressable
+          onPress={onCheck}
+          hitSlop={12}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: false }}
+          accessibilityLabel={`Mark “${entry.text}” as done`}
+          style={styles.check}
+        >
+          <Ionicons name="ellipse-outline" size={26} color={t.muted} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -100,4 +118,5 @@ const styles = StyleSheet.create({
   body: { flex: 1, gap: 2 },
   text: { fontSize: 16, lineHeight: 22 },
   meta: { fontSize: 13 },
+  check: { paddingLeft: 4, alignSelf: 'center' },
 });

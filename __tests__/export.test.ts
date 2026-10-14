@@ -53,7 +53,7 @@ describe('import', () => {
       ['2026-10-09', 'Hero layout', 'done'],
       ['2026-10-09', 'Write tests', 'next'],
       ['2026-10-09', 'Expenses', 'done'],
-      ['2026-10-12', 'Write tests', 'in_progress'],
+      ['2026-10-12', 'Write tests', 'next'],
     ]);
     expect(entries[0].durationMinutes).toBe(90);
     expect(entries[0].tags).toEqual(['ui']);

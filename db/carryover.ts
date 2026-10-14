@@ -44,8 +44,8 @@ export async function getCarryOver(db: Db, today: DayKey): Promise<CarryOver | n
 }
 
 /**
- * Copies the given entries to `today`, linked via carried_from_id. A "Next"
- * item becomes "In progress" (you're picking it up); others keep their type.
+ * Copies the given entries to `today`, linked via carried_from_id, keeping
+ * their type (Next steps land in today's Next steps box).
  */
 export async function continueItems(db: Db, items: Entry[], today: DayKey): Promise<Entry[]> {
   const created: Entry[] = [];
@@ -55,7 +55,7 @@ export async function continueItems(db: Db, items: Entry[], today: DayKey): Prom
         await createEntry(db, {
           topicId: item.topicId,
           text: item.text,
-          type: item.type === 'next' ? 'in_progress' : item.type,
+          type: item.type,
           day: today,
           carriedFromId: item.id,
           tags: item.tags,

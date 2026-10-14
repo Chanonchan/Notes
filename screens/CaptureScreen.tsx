@@ -6,16 +6,17 @@ import { DayTimeline } from '../components/DayTimeline';
 import { TYPE_ICONS } from '../components/EntryRow';
 import { ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { DurationChips } from '../components/DurationChips';
+import { PlanCard } from '../components/PlanCard';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopic, getCarryOver, isCarryOverDismissed, setLastTopicId } from '../db';
+import { createEntry, createTopic, getCarryOver, isCarryOverDismissed, setLastTopicId, updateEntry } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { storageStats } from '../services/export';
 import { isInstalledApp } from '../services/export/files';
 import { useTheme } from '../hooks/useTheme';
 import { formatDayLong, formatDuration, formatRelativeDay, todayKey } from '../services/dates';
-import { ENTRY_TYPE_LABELS, type EntryType } from '../types';
+import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
 import type { TabScreenProps } from '../types/navigation';
 
 /**
@@ -44,6 +45,15 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const [showOptions, setShowOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
+  // Last ticked-off item, so a mis-tap can be undone.
+  const [undo, setUndo] = useState<{ id: number; type: EntryType; text: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoreType = useMutation((db, id: number, prev: EntryType) => updateEntry(db, id, { type: prev }));
+  const offerUndo = (e: Entry) => {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setUndo({ id: e.id, type: e.type, text: e.text });
+    undoTimer.current = setTimeout(() => setUndo(null), 5000);
+  };
   const topicTouched = useRef(false);
   const suggestedId = useTopicSuggestion(text);
 
@@ -137,8 +147,20 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
+        <PlanCard
+          day={today}
+          topicId={topicId}
+          onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
+          onChecked={offerUndo}
+        />
         {entries.length ? (
-          <DayTimeline day={today} onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} />
+          <DayTimeline
+            day={today}
+            excludeTypes={['next']}
+            emptyText=""
+            onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
+            onChecked={offerUndo}
+          />
         ) : (
           <View style={styles.empty}>
             <Ionicons name="sunny-outline" size={44} color={t.muted} />
@@ -158,6 +180,26 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 
       {/* Composer */}
       <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
+        {undo ? (
+          <View style={[styles.undoBar, { backgroundColor: t.text }]}>
+            <Ionicons name="checkmark-circle" size={20} color={t.types.done} />
+            <Text style={{ color: t.bg, fontSize: 15, flex: 1 }} numberOfLines={1}>
+              Done: {undo.text}
+            </Text>
+            <Pressable
+              onPress={async () => {
+                const u = undo;
+                setUndo(null);
+                if (u) await restoreType(u.id, u.type);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Undo"
+            >
+              <Text style={{ color: t.dark ? t.primary : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {toast ? (
           <View style={[styles.toast, { backgroundColor: t.types.done }]} pointerEvents="none">
             <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
@@ -234,6 +276,19 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  undoBar: {
+    position: 'absolute',
+    top: -56,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 46,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    zIndex: 11,
+  },
   moveHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, minHeight: 44 },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
   options: { gap: 10 },

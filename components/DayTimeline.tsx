@@ -4,7 +4,9 @@ import { groupByTopic, useDayEntries, useTopics } from '../hooks/useData';
 import { useEntryActions } from '../hooks/useEntryActions';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration } from '../services/dates';
-import type { DayKey, Entry } from '../types';
+import { updateEntry } from '../db';
+import { useMutation } from '../hooks/useDb';
+import type { DayKey, Entry, EntryType } from '../types';
 import { ENTRY_INSET, EntryRow } from './EntryRow';
 import { GroupLabel, ListGroup } from './List';
 
@@ -13,18 +15,31 @@ export function DayTimeline({
   day,
   onEdit,
   emptyText = 'Nothing logged yet.',
+  excludeTypes = [],
+  onChecked,
 }: {
   day: DayKey;
   onEdit: (entry: Entry) => void;
   emptyText?: string;
+  /** Types shown elsewhere (e.g. Next steps in Today's plan box). */
+  excludeTypes?: EntryType[];
+  /** Called after an open item is ticked off (e.g. to offer Undo). */
+  onChecked?: (entry: Entry) => void;
 }) {
   const t = useTheme();
-  const { entries, loading } = useDayEntries(day);
+  const { entries: all, loading } = useDayEntries(day);
+  const entries = all.filter((e) => !excludeTypes.includes(e.type));
+  const markDone = useMutation((db, id: number) => updateEntry(db, id, { type: 'done' }));
+  const check = async (e: Entry) => {
+    await markDone(e.id);
+    onChecked?.(e);
+  };
   const { byId } = useTopics(true);
   const actions = useEntryActions();
 
   if (loading) return null;
   if (!entries.length) {
+    if (!emptyText) return null;
     return <Text style={{ color: t.muted, fontSize: 15, paddingVertical: 24, textAlign: 'center' }}>{emptyText}</Text>;
   }
 
@@ -39,7 +54,13 @@ export function DayTimeline({
             </GroupLabel>
             <ListGroup inset={ENTRY_INSET}>
               {list.map((e) => (
-                <EntryRow key={e.id} entry={e} onPress={() => onEdit(e)} onTypePress={() => actions.open(e)} />
+                <EntryRow
+                  key={e.id}
+                  entry={e}
+                  onPress={() => onEdit(e)}
+                  onTypePress={() => actions.open(e)}
+                  onCheck={e.type === 'in_progress' || e.type === 'next' ? () => check(e) : undefined}
+                />
               ))}
             </ListGroup>
           </View>

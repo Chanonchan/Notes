@@ -80,7 +80,7 @@ export function CarryOverScreen({ navigation }: RootScreenProps<'CarryOver'>) {
           })}
         </ListGroup>
         <Text style={[styles.note, { color: t.muted }]}>
-          “Next” items are added as “In progress”. You can change any of them later.
+          Next steps go into today’s Next steps box. You can change any of them later.
         </Text>
       </ScrollView>
 
