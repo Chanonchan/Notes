@@ -5,7 +5,7 @@ import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List
 import { TopicStatusBadge } from '../components/TopicStatusBadge';
 import { TagChips } from '../components/TopicTags';
 import { Chip } from '../components/ui';
-import { listTopicStats, type TopicStats } from '../db';
+import { listTopicStats, topicStatus, type TopicStats } from '../db';
 import { useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, formatRelativeDay } from '../services/dates';
@@ -24,7 +24,9 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
   const [showArchived, setShowArchived] = useState(false);
   const { data } = useQuery((db) => listTopicStats(db, { includeArchived: showArchived }), [showArchived]);
   const stats = data ?? [];
-  const active = stats.filter((s) => !s.topic.archived);
+  // Done topics (all their work finished) leave Active; they come back when new work is logged.
+  const active = stats.filter((s) => !s.topic.archived && topicStatus(s) !== 'done');
+  const done = stats.filter((s) => !s.topic.archived && topicStatus(s) === 'done');
   const archived = stats.filter((s) => s.topic.archived);
 
   const row = (s: TopicStats) => (
@@ -59,6 +61,12 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
           <>
             <GroupLabel right={`${active.length}`}>Active</GroupLabel>
             <ListGroup>{active.map(row)}</ListGroup>
+          </>
+        ) : null}
+        {done.length ? (
+          <>
+            <GroupLabel right={`${done.length}`}>Done</GroupLabel>
+            <ListGroup>{done.map(row)}</ListGroup>
           </>
         ) : null}
         {archived.length ? (
