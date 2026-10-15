@@ -4,16 +4,14 @@ import { DarkTheme, DefaultTheme, NavigationContainer, useNavigationContainerRef
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, type ComponentProps } from 'react';
-import { ActivityIndicator, AppState, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { Db } from './db/client';
 import { openAppDb } from './db/openAppDb';
 import { migrate } from './db/migrations';
-import { markCarryOverPrompted, shouldPromptCarryOver } from './db/carryover';
 import { getSetting } from './db/settings';
-import { DbProvider, useDb } from './hooks/useDb';
-import { todayKey } from './services/dates';
+import { DbProvider } from './hooks/useDb';
 import { setAppearance, useTheme } from './hooks/useTheme';
 import { BackupScreen } from './screens/BackupScreen';
 import { CaptureScreen } from './screens/CaptureScreen';
@@ -71,28 +69,12 @@ function Tabs() {
 
 function Root() {
   const t = useTheme();
-  const { db } = useDb();
   const navRef = useNavigationContainerRef<RootStackParamList>();
 
-  // First open of the day: offer yesterday's open items (once per day).
-  const promptCarryOver = async () => {
-    const today = todayKey();
-    if (await shouldPromptCarryOver(db, today)) {
-      await markCarryOverPrompted(db, today);
-      if (navRef.isReady()) navRef.navigate('CarryOver');
-    }
-  };
-  // Also when the app comes back to the foreground on a new day.
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => s === 'active' && promptCarryOver());
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db]);
   const navTheme = t.dark ? DarkTheme : DefaultTheme;
   return (
     <NavigationContainer
       ref={navRef}
-      onReady={promptCarryOver}
       theme={{ ...navTheme, colors: { ...navTheme.colors, background: t.bg, card: t.card, text: t.text, primary: t.primary, border: t.border } }}
     >
       <StatusBar style={t.dark ? 'light' : 'dark'} />

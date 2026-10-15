@@ -4,7 +4,7 @@ import { groupByTopic, useDayEntries, useTopics } from '../hooks/useData';
 import { useEntryActions } from '../hooks/useEntryActions';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration } from '../services/dates';
-import { updateEntry } from '../db';
+import { setStatus } from '../db';
 import { useMutation } from '../hooks/useDb';
 import type { DayKey, Entry, EntryType } from '../types';
 import { ENTRY_INSET, EntryRow } from './EntryRow';
@@ -29,7 +29,7 @@ export function DayTimeline({
   const t = useTheme();
   const { entries: all, loading } = useDayEntries(day);
   const entries = all.filter((e) => !excludeTypes.includes(e.type));
-  const markDone = useMutation((db, id: number) => updateEntry(db, id, { type: 'done' }));
+  const markDone = useMutation((db, id: number) => setStatus(db, id, 'done'));
   const check = async (e: Entry) => {
     await markDone(e.id);
     onChecked?.(e);

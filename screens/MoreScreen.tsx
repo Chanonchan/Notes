@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { Button } from '../components/ui';
-import { getCarryOver, setSetting } from '../db';
+import { setSetting } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useReminderTime, useStreak, useWorkdays } from '../hooks/useHabits';
 import { REMINDER_OFF } from '../services/reminder';
@@ -31,7 +31,6 @@ function formatWorkdays(days: number[]): string {
 export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
   const t = useTheme();
   const today = todayKey();
-  const carry = useQuery((db) => getCarryOver(db, today), [today]).data;
   const appearance = useAppearance();
   const saveAppearance = useMutation((db, a: Appearance) => setSetting(db, 'appearance', a === 'auto' ? null : a));
   const streak = useStreak();
@@ -46,12 +45,6 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
       <View style={styles.body}>
         <ListGroup>
           <ListRow icon="search" title="Search" subtitle="Find any entry by words, topic, type or date" onPress={() => navigation.navigate('Search')} />
-          <ListRow
-            icon="return-down-forward"
-            title="Carry over open items"
-            subtitle={carry ? `${carry.items.length} open from the last logged day` : 'Nothing open from the last logged day'}
-            onPress={() => navigation.navigate('CarryOver')}
-          />
           <ListRow
             icon="cloud-download-outline"
             title="Backup & export"

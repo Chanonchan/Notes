@@ -4,12 +4,12 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 
 import { DayTimeline } from '../components/DayTimeline';
 import { TYPE_ICONS } from '../components/EntryRow';
-import { ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { DurationChips } from '../components/DurationChips';
-import { PlanCard } from '../components/PlanCard';
+import { ListGroup, ListRow, ScreenHeader } from '../components/List';
+import { TodoList } from '../components/TodoList';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopic, getCarryOver, isCarryOverDismissed, setLastTopicId, updateEntry } from '../db';
+import { createEntry, createTopic, listOpenItems, OPEN_TYPES, setLastTopicId, updateEntry } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useReminder, useStreak } from '../hooks/useHabits';
@@ -36,11 +36,11 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const lastTopicId = useLastTopicId();
   const today = todayKey();
   const { entries } = useDayEntries(today);
-  const carry = useQuery((db) => getCarryOver(db, today), [today]).data;
+  const doneToday = entries.filter((e) => e.type === 'done');
+  const openCount = useQuery((db) => listOpenItems(db)).data?.length ?? 0;
   // Fresh home-screen install with an empty log: point to the Safari → app move.
   const totalEntries = useQuery((db) => storageStats(db), []).data?.entries;
   const showMoveHint = Platform.OS === 'web' && isInstalledApp() && totalEntries === 0;
-  const carryDismissed = useQuery((db) => isCarryOverDismissed(db, today), [today]).data;
   const streak = useStreak();
   const reminder = useReminder(entries);
 
@@ -52,12 +52,12 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
   // Last ticked-off item, so a mis-tap can be undone.
-  const [undo, setUndo] = useState<{ id: number; type: EntryType; text: string } | null>(null);
+  const [undo, setUndo] = useState<{ id: number; type: EntryType; day: string; text: string } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const restoreType = useMutation((db, id: number, prev: EntryType) => updateEntry(db, id, { type: prev }));
+  const restoreType = useMutation((db, id: number, prev: EntryType, day: string) => updateEntry(db, id, { type: prev, day }));
   const offerUndo = (e: Entry) => {
     if (undoTimer.current) clearTimeout(undoTimer.current);
-    setUndo({ id: e.id, type: e.type, text: e.text });
+    setUndo({ id: e.id, type: e.type, day: e.day, text: e.text });
     undoTimer.current = setTimeout(() => setUndo(null), 5000);
   };
   const topicTouched = useRef(false);
@@ -164,19 +164,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
         </View>
       ) : null}
 
-      {carry && !carryDismissed ? (
-        <View style={styles.banner}>
-          <ListGroup>
-            <ListRow
-              icon="return-down-forward"
-              title={`${carry.items.length} open ${carry.items.length === 1 ? 'item' : 'items'} from ${
-                formatRelativeDay(carry.fromDay, today) === 'Yesterday' ? 'yesterday' : formatRelativeDay(carry.fromDay, today)
-              }`}
-              onPress={() => navigation.navigate('CarryOver')}
-            />
-          </ListGroup>
-        </View>
-      ) : null}
 
       {/* Today's log */}
       <ScrollView
@@ -186,21 +173,21 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <PlanCard
-          day={today}
-          topicId={topicId}
-          onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
-          onChecked={offerUndo}
-        />
-        {entries.length ? (
-          <DayTimeline
-            day={today}
-            excludeTypes={['next']}
-            emptyText=""
-            onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
-            onChecked={offerUndo}
-          />
-        ) : (
+        <TodoList onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} onChecked={offerUndo} />
+        {doneToday.length ? (
+          <>
+            <Text style={[styles.sectionTitle, { color: t.text }]}>Done today</Text>
+            <DayTimeline
+              day={today}
+              excludeTypes={OPEN_TYPES}
+              emptyText=""
+              onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
+              onChecked={offerUndo}
+            />
+          </>
+        ) : openCount ? (
+          <Text style={[styles.hint, { color: t.muted }]}>Nothing done yet today. Log it in the box below.</Text>
+        ) : !entries.length ? (
           <View style={styles.empty}>
             <Ionicons name="sunny-outline" size={44} color={t.muted} />
             <Text style={[styles.emptyTitle, { color: t.text }]}>Nothing logged yet today</Text>
@@ -214,7 +201,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
               </Pressable>
             ) : null}
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
       {/* Composer */}
@@ -229,7 +216,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
               onPress={async () => {
                 const u = undo;
                 setUndo(null);
-                if (u) await restoreType(u.id, u.type);
+                if (u) await restoreType(u.id, u.type, u.day);
               }}
               hitSlop={10}
               accessibilityRole="button"
@@ -314,6 +301,8 @@ const styles = StyleSheet.create({
   durText: { fontSize: 11, fontWeight: '800' },
   banner: { paddingHorizontal: 16, paddingTop: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', marginTop: 28, marginBottom: -8, paddingHorizontal: 4 },
+  hint: { fontSize: 14, marginTop: 24, paddingHorizontal: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
