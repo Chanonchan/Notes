@@ -13,6 +13,7 @@ import { createEntry, createTopicWithTags, listOpenItems, OPEN_TYPES, setLastTop
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useReminder } from '../hooks/useHabits';
+import { ReminderCard } from '../components/ReminderCard';
 import { storageStats } from '../services/export';
 import { isInstalledApp } from '../services/export/files';
 import { useTheme } from '../hooks/useTheme';
@@ -38,7 +39,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   // Fresh home-screen install with an empty log: point to the Safari → app move.
   const totalEntries = useQuery((db) => storageStats(db), []).data?.entries;
   const showMoveHint = Platform.OS === 'web' && isInstalledApp() && totalEntries === 0;
-  const reminder = useReminder(entries);
+  const reminder = useReminder();
 
   const [text, setText] = useState('');
   const [topicId, setTopicId] = useState<number | null>(null);
@@ -131,20 +132,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 
       {reminder.show ? (
         <View style={styles.banner}>
-          <ListGroup>
-            <ListRow
-              icon="notifications"
-              title="Anything you forgot to log today?"
-              subtitle="Tap to add it now"
-              onPress={() => inputRef.current?.focus()}
-              chevron={false}
-              right={
-                <Pressable onPress={() => reminder.dismiss()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Dismiss reminder">
-                  <Ionicons name="close" size={22} color={t.muted} />
-                </Pressable>
-              }
-            />
-          </ListGroup>
+          <ReminderCard onClose={reminder.close} />
         </View>
       ) : null}
 

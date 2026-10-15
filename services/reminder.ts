@@ -1,8 +1,10 @@
 import { fromDayKey } from './dates';
-import type { DayKey } from '../types';
+import type { DayKey, Entry } from '../types';
 
-export const DEFAULT_REMINDER_TIME = '17:30';
+export const DEFAULT_REMINDER_TIME = '17:00';
 export const REMINDER_OFF = 'off';
+/** Every hour of the day, "00:00" … "23:00". */
+export const HOURLY_TIMES = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
 
 /** "17:30" → minutes after midnight; null if invalid. */
 export function parseTime(value: string): number | null {
@@ -14,8 +16,8 @@ export function parseTime(value: string): number | null {
 }
 
 /**
- * The in-app end-of-day reminder shows on a workday once the reminder time
- * has passed, until it's dismissed (or something is logged after it fired).
+ * The in-app reminder is due on a workday once the reminder time has passed,
+ * unless it was already shown today (it shows once a day).
  */
 export function shouldShowReminder(opts: {
   now: Date;
@@ -23,18 +25,36 @@ export function shouldShowReminder(opts: {
   /** "HH:MM", or "off". */
   time: string;
   workdays: number[];
-  dismissedDay: string | null;
-  /** Timestamp of the last entry created today, if any. */
-  lastEntryAt: number | null;
+  /** Day the reminder was last shown. */
+  shownDay: string | null;
 }): boolean {
-  const { now, today, time, workdays, dismissedDay, lastEntryAt } = opts;
-  if (time === REMINDER_OFF || dismissedDay === today) return false;
+  const { now, today, time, workdays, shownDay } = opts;
+  if (time === REMINDER_OFF || shownDay === today) return false;
   if (!workdays.includes(fromDayKey(today).getDay())) return false;
   const at = parseTime(time);
   if (at === null) return false;
-  if (now.getHours() * 60 + now.getMinutes() < at) return false;
-  // Logged something after the reminder time? Then it has done its job.
-  const fireTime = new Date(now);
-  fireTime.setHours(Math.floor(at / 60), at % 60, 0, 0);
-  return !(lastEntryAt != null && lastEntryAt >= fireTime.getTime());
+  return now.getHours() * 60 + now.getMinutes() >= at;
+}
+
+export interface ReminderGroup {
+  topic: string;
+  inProgress: string[];
+  planned: string[];
+}
+
+/** Open jobs grouped by topic for the reminder; busiest topics first, "No topic" last. */
+export function groupOpenItems(items: Entry[], topicName: (id: number) => string | undefined): ReminderGroup[] {
+  const groups = new Map<number | null, ReminderGroup>();
+  for (const e of items) {
+    const key = e.topicId != null && topicName(e.topicId) ? e.topicId : null;
+    const g = groups.get(key) ?? { topic: key != null ? topicName(key)! : 'No topic', inProgress: [], planned: [] };
+    (e.type === 'in_progress' ? g.inProgress : g.planned).push(e.text);
+    groups.set(key, g);
+  }
+  return [...groups.entries()]
+    .sort(([ka, a], [kb, b]) =>
+      (ka === null ? 1 : 0) - (kb === null ? 1 : 0) ||
+      b.inProgress.length + b.planned.length - (a.inProgress.length + a.planned.length) ||
+      a.topic.localeCompare(b.topic))
+    .map(([, g]) => g);
 }

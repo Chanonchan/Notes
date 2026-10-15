@@ -3,17 +3,17 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
-import { Button } from '../components/ui';
+import { Button, Chip } from '../components/ui';
 import { setSetting } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useReminderTime, useWorkdays } from '../hooks/useHabits';
-import { REMINDER_OFF } from '../services/reminder';
+import { HOURLY_TIMES, REMINDER_OFF } from '../services/reminder';
 import { setAppearance, useAppearance, useTheme, type Appearance } from '../hooks/useTheme';
 import type { TabScreenProps } from '../types/navigation';
 
 const APPEARANCE_ORDER: Appearance[] = ['auto', 'light', 'dark'];
 const APPEARANCE_LABELS: Record<Appearance, string> = { auto: 'Automatic', light: 'Light', dark: 'Dark' };
-const REMINDER_CHOICES = ['16:30', '17:00', '17:30', '18:00', '18:30', '19:00', REMINDER_OFF];
+const REMINDER_CHOICES = [REMINDER_OFF, ...HOURLY_TIMES];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -55,7 +55,7 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
           <ListRow
             icon="notifications-outline"
             title="Daily reminder"
-            subtitle="Shows in the app after this time"
+            subtitle="Once a day: a summary of your to-do list"
             value={reminderTime === REMINDER_OFF ? 'Off' : reminderTime}
             onPress={() => setSheet('reminder')}
           />
@@ -80,22 +80,26 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
         <Pressable style={styles.backdrop} onPress={() => setSheet(null)} accessibilityLabel="Close" />
         <View style={[styles.sheet, { backgroundColor: t.bg }]}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>{sheet === 'reminder' ? 'Daily reminder' : 'Workdays'}</Text>
-          <ListGroup>
-            {sheet === 'reminder'
-              ? REMINDER_CHOICES.map((c) => (
-                  <ListRow
-                    key={c}
-                    title={c === REMINDER_OFF ? 'Off' : c}
+          {sheet === 'reminder' ? (
+            <View style={styles.hours}>
+              {REMINDER_CHOICES.map((c) => (
+                <View key={c} style={c === REMINDER_OFF ? styles.offCell : styles.hourCell}>
+                  <Chip
+                    label={c === REMINDER_OFF ? 'Off' : c}
+                    selected={reminderTime === c}
                     accessibilityLabel={c === REMINDER_OFF ? 'Reminder off' : `Remind at ${c}`}
-                    chevron={false}
                     onPress={async () => {
                       await saveSetting('reminder_time', c);
                       setSheet(null);
                     }}
-                    right={reminderTime === c ? <Ionicons name="checkmark" size={22} color={t.primary} /> : undefined}
                   />
-                ))
-              : DAY_ORDER.map((d) => {
+                </View>
+              ))}
+            </View>
+          ) : (
+            <ScrollView style={{ flexShrink: 1 }}>
+              <ListGroup>
+                {DAY_ORDER.map((d) => {
                   const on = workdays.includes(d);
                   return (
                     <ListRow
@@ -111,7 +115,9 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
                     />
                   );
                 })}
-          </ListGroup>
+              </ListGroup>
+            </ScrollView>
+          )}
           <Button label="Done" kind="secondary" onPress={() => setSheet(null)} style={{ marginTop: 12 }} />
         </View>
       </Modal>
@@ -125,4 +131,7 @@ const styles = StyleSheet.create({
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '85%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 12 },
   body: { paddingHorizontal: 16 },
+  hours: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10 },
+  hourCell: { width: '25%', alignItems: 'center' },
+  offCell: { width: '100%', alignItems: 'flex-start', marginBottom: 4 },
 });

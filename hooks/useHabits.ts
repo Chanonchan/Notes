@@ -4,7 +4,6 @@ import { getSetting, setSetting } from '../db';
 import { todayKey } from '../services/dates';
 import { DEFAULT_REMINDER_TIME, shouldShowReminder } from '../services/reminder';
 import { parseWorkdays } from '../services/workdays';
-import type { Entry } from '../types';
 import { useMutation, useQuery } from './useDb';
 
 export function useWorkdays() {
@@ -15,24 +14,31 @@ export function useReminderTime(): string {
   return useQuery((db) => getSetting(db, 'reminder_time')).data ?? DEFAULT_REMINDER_TIME;
 }
 
-/** In-app end-of-day reminder for Today. Re-checks every minute while open. */
-export function useReminder(todayEntries: Entry[]) {
+/**
+ * In-app reminder for Today: shows once a day after the reminder time and
+ * stays until closed. It's marked as shown as soon as it appears, so it
+ * won't come back that day even if the app is reopened.
+ */
+export function useReminder() {
   const today = todayKey();
   const time = useReminderTime();
   const workdays = useWorkdays();
-  const { data: dismissedDay } = useQuery((db) => getSetting(db, 'reminder_dismissed_day'));
-  const dismiss = useMutation((db) => setSetting(db, 'reminder_dismissed_day', today));
+  const { data: shownDay } = useQuery((db) => getSetting(db, 'reminder_dismissed_day'));
+  const markShown = useMutation((db, day: string) => setSetting(db, 'reminder_dismissed_day', day));
   const [now, setNow] = useState(() => new Date());
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const lastEntryAt = todayEntries.reduce<number | null>((m, e) => (m === null || e.createdAt > m ? e.createdAt : m), null);
-  const show =
-    dismissedDay !== undefined &&
-    shouldShowReminder({ now, today, time, workdays, dismissedDay: dismissedDay ?? null, lastEntryAt });
+  const due = shownDay !== undefined && shouldShowReminder({ now, today, time, workdays, shownDay: shownDay ?? null });
+  useEffect(() => {
+    if (!due) return;
+    setOpen(true);
+    void markShown(today);
+  }, [due, today, markShown]);
 
-  return { show, dismiss, time };
+  return { show: open, close: () => setOpen(false), time };
 }
