@@ -71,7 +71,7 @@ export function SearchScreen({ navigation }: RootScreenProps<'Search'>) {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.top, { borderBottomColor: t.border }]}>
-        <View style={[styles.searchBox, { backgroundColor: t.card, borderColor: t.border }]}>
+        <View style={[styles.searchBox, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
           <Ionicons name="search" size={20} color={t.muted} />
           <TextInput
             autoFocus

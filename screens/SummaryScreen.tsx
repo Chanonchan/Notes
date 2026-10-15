@@ -114,7 +114,7 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
                 accessibilityRole="button"
                 accessibilityLabel="Copy, share or edit the summary"
                 hitSlop={10}
-                style={[styles.shareBtn, { backgroundColor: t.card, borderColor: t.border }]}
+                style={[styles.shareBtn, { backgroundColor: t.card, borderColor: t.cardBorder }]}
               >
                 <Ionicons name="share-outline" size={22} color={t.primary} />
               </Pressable>

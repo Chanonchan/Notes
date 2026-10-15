@@ -14,6 +14,8 @@ const light = {
   text: '#1A1C21',
   muted: '#6B7280',
   border: '#E3E5EA',
+  /** Outline around cards. Dark mode has none: the grey card on black is enough. */
+  cardBorder: '#E3E5EA',
   primary: '#2F6FEB',
   onPrimary: '#FFFFFF',
   chip: '#EDEFF3',
@@ -34,6 +36,7 @@ const dark: typeof light = {
   text: '#E9E9EE',
   muted: '#9D9DA5',
   border: '#38383A',
+  cardBorder: 'transparent',
   // Brighter blue with dark text on it, so buttons and the selected tab read clearly.
   primary: '#4D94FF',
   onPrimary: '#06142B',

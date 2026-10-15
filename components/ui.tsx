@@ -77,7 +77,7 @@ export function Button({
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
-  return <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }, style]}>{children}</View>;
+  return <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }, style]}>{children}</View>;
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {

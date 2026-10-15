@@ -30,7 +30,7 @@ export function ReminderCard({ onClose }: { onClose: () => void }) {
       onPress={onClose}
       accessibilityRole="button"
       accessibilityLabel="Close reminder"
-      style={({ pressed }) => [styles.card, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.8 : 1 }]}
+      style={({ pressed }) => [styles.card, { backgroundColor: t.card, borderColor: t.cardBorder, opacity: pressed ? 0.8 : 1 }]}
     >
       <View style={styles.head}>
         <Ionicons name="notifications" size={20} color={t.primary} />

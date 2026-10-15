@@ -61,7 +61,7 @@ export function ListGroup({ children, style, inset = 62 }: { children: ReactNode
   const t = useTheme();
   const items = Children.toArray(children).filter(isValidElement);
   return (
-    <View style={[styles.group, { backgroundColor: t.card, borderColor: t.border }, style]}>
+    <View style={[styles.group, { backgroundColor: t.card, borderColor: t.cardBorder }, style]}>
       {items.map((child, i) => (
         <Fragment key={child.key ?? i}>
           {i > 0 ? <View style={[styles.divider, { backgroundColor: t.border, marginLeft: inset }]} /> : null}
