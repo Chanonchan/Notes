@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { createEntry, createTopicWithTags, setLastTopicId } from '../db';
 import { useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
@@ -26,6 +26,8 @@ export function Composer({
   undo,
   onUndo,
   placeholder = 'What did you do?',
+  autoFocus,
+  style,
 }: {
   fixedTopicId?: number;
   inputRef?: RefObject<TextInput | null>;
@@ -33,6 +35,8 @@ export function Composer({
   undo?: UndoInfo | null;
   onUndo?: () => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useTheme();
   const ownRef = useRef<TextInput>(null);
@@ -86,18 +90,8 @@ export function Composer({
   const optionsLabel = `${ENTRY_TYPE_LABELS[type]}${duration ? ` · ${formatDuration(duration)}` : ''}`;
 
   return (
-    <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
-      {undo ? (
-        <View style={[styles.undoBar, { backgroundColor: t.text }]}>
-          <Ionicons name={TYPE_ICONS[undo.newType]} size={20} color={t.types[undo.newType]} />
-          <Text style={{ color: t.bg, fontSize: 15, flex: 1 }} numberOfLines={1}>
-            {ENTRY_TYPE_LABELS[undo.newType]}: {undo.text}
-          </Text>
-          <Pressable onPress={onUndo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Undo">
-            <Text style={{ color: t.dark ? t.primary : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
-          </Pressable>
-        </View>
-      ) : null}
+    <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }, style]}>
+      {undo ? <UndoBar undo={undo} onUndo={onUndo} style={styles.undoAbove} /> : null}
       {toast ? (
         <View style={[styles.toast, { backgroundColor: t.types.done }]} pointerEvents="none">
           <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
@@ -143,6 +137,7 @@ export function Composer({
 
         <TextInput
           ref={inputRef}
+          autoFocus={autoFocus}
           value={text}
           onChangeText={setText}
           placeholder={placeholder}
@@ -171,22 +166,34 @@ export function Composer({
   );
 }
 
+/** "Done: …  Undo" bar shown for a few seconds after a job is ticked off. */
+export function UndoBar({ undo, onUndo, style }: { undo: UndoInfo; onUndo?: () => void; style?: StyleProp<ViewStyle> }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.undoBar, { backgroundColor: t.text }, style]}>
+      <Ionicons name={TYPE_ICONS[undo.newType]} size={20} color={t.types[undo.newType]} />
+      <Text style={{ color: t.bg, fontSize: 15, flex: 1 }} numberOfLines={1}>
+        {ENTRY_TYPE_LABELS[undo.newType]}: {undo.text}
+      </Text>
+      <Pressable onPress={onUndo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Undo">
+        <Text style={{ color: t.dark ? t.primary : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   typeBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   durBadge: { position: 'absolute', bottom: -4, right: -6, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 },
   durText: { fontSize: 11, fontWeight: '800' },
+  undoAbove: { position: 'absolute', top: -56, left: 12, right: 12, zIndex: 11 },
   undoBar: {
-    position: 'absolute',
-    top: -56,
-    left: 12,
-    right: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     minHeight: 46,
     borderRadius: 14,
     paddingHorizontal: 14,
-    zIndex: 11,
   },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
   options: { gap: 10 },

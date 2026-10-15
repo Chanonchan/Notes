@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Composer } from '../components/Composer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Composer, UndoBar } from '../components/Composer';
 import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
 import { GroupLabel, IconTile, ListGroup, ListRow } from '../components/List';
 import { TopicStatusBadge } from '../components/TopicStatusBadge';
@@ -26,6 +28,8 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const actions = useEntryActions();
   const { undo, offer: offerUndo, run: runUndo } = useUndo();
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
+  const [composing, setComposing] = useState(false);
   const { data: all } = useQuery((db) => listTopicStats(db, { includeArchived: true }));
   const { data: entries } = useQuery((db) => listEntriesByTopic(db, topicId), [topicId]);
   const stats = all?.find((s) => s.topic.id === topicId);
@@ -194,13 +198,42 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
         ))}
       </ScrollView>
 
-      <Composer
-        fixedTopicId={topicId}
-        placeholder={`Log work on ${topic.name}`}
-        undo={undo}
-        onUndo={runUndo}
-        onAdded={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150)}
-      />
+      {undo ? <UndoBar undo={undo} onUndo={runUndo} style={[styles.floatingUndo, { bottom: insets.bottom + 92 }]} /> : null}
+
+      {/* Quick log: hidden until the + button is tapped. */}
+      <Pressable
+        onPress={() => setComposing(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Log work on ${topic.name}`}
+        style={({ pressed }) => [styles.fab, { backgroundColor: t.primary, bottom: insets.bottom + 20, opacity: pressed ? 0.85 : 1 }]}
+      >
+        <Ionicons name="add" size={32} color={t.onPrimary} />
+      </Pressable>
+      <Modal visible={composing} transparent animationType="slide" onRequestClose={() => setComposing(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Pressable style={styles.backdrop} onPress={() => setComposing(false)} accessibilityLabel="Close" />
+          <View style={[styles.composeSheet, { backgroundColor: t.card, paddingBottom: insets.bottom }]}>
+            <View style={styles.composeHead}>
+              <Text style={[styles.composeTitle, { color: t.text }]} numberOfLines={1}>
+                Log work on {topic.name}
+              </Text>
+              <Pressable onPress={() => setComposing(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
+                <Ionicons name="close" size={24} color={t.muted} />
+              </Pressable>
+            </View>
+            <Composer
+              fixedTopicId={topicId}
+              placeholder="What did you do?"
+              autoFocus
+              style={{ borderTopWidth: 0 }}
+              onAdded={() => {
+                setComposing(false);
+                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+              }}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       {actions.menu}
 
       <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={() => setMenuOpen(false)}>
@@ -299,7 +332,25 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 48 },
+  container: { padding: 16, paddingBottom: 110 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  floatingUndo: { position: 'absolute', left: 16, right: 16 },
+  composeSheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
+  composeHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14 },
+  composeTitle: { flex: 1, fontSize: 18, fontWeight: '800' },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
   heading: { fontSize: 28, fontWeight: '800', lineHeight: 34, paddingHorizontal: 4 },
