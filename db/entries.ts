@@ -181,3 +181,8 @@ export async function countEntriesByDay(db: Db, from: DayKey, to: DayKey): Promi
 export async function queryEntries(db: Db, sql: string, params: SqlValue[] = []): Promise<Entry[]> {
   return withTags(db, await db.all<EntryRow>(sql, params));
 }
+
+/** Every day that has at least one entry (for the streak). */
+export async function listLoggedDays(db: Db): Promise<DayKey[]> {
+  return (await db.all<{ day: string }>('SELECT DISTINCT day FROM entries ORDER BY day')).map((r) => r.day);
+}

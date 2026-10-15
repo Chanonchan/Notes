@@ -7,6 +7,7 @@ export type SettingKey =
   | 'last_carryover_day'
   | 'carryover_dismissed_day'
   | 'appearance'
+  | 'reminder_dismissed_day'
   /** Hand-edited summary text, per period: summary_draft:<kind>:<from>:<to> */
   | `summary_draft:${string}`;
 
