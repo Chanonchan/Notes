@@ -9,7 +9,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { TimeBarChart } from '../components/TimeBarChart';
 import { ENTRY_INSET, EntryRow, TypeIcon } from '../components/EntryRow';
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
-import { Button, Chip } from '../components/ui';
+import { Chip } from '../components/ui';
 import { getSetting, setSetting } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
@@ -46,7 +46,7 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const today = todayKey();
   const [range, setRange] = useState<SummaryRange>(() => rangeFor('week', today));
   const [picking, setPicking] = useState(false);
-  const [showText, setShowText] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const { data: summary } = useQuery((db) => buildSummary(db, range), [range.kind, range.from, range.to]);
@@ -105,7 +105,22 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title="Summary" />
+        <ScreenHeader
+          title="Summary"
+          right={
+            summary && summary.totals.entries ? (
+              <Pressable
+                onPress={() => setMenuOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Copy, share or edit the summary"
+                hitSlop={10}
+                style={[styles.shareBtn, { backgroundColor: t.card, borderColor: t.border }]}
+              >
+                <Ionicons name="share-outline" size={22} color={t.primary} />
+              </Pressable>
+            ) : null
+          }
+        />
         <View style={styles.body}>
         <SegmentedControl options={KINDS} value={range.kind} onChange={setKind} />
 
@@ -137,53 +152,54 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
 
         {summary ? <SummaryBody summary={summary} showChart={showChart} onOpenEntry={(id) => navigation.navigate('EntryEdit', { entryId: id })} /> : null}
 
-        {summary && summary.totals.entries ? (
-          <>
-            <GroupLabel>Copy & share</GroupLabel>
+        </View>
+      </ScrollView>
+
+      {notice ? (
+        <View style={[styles.notice, { backgroundColor: t.text }]} pointerEvents="none">
+          <Text style={{ color: t.bg, fontWeight: '700' }}>{notice}</Text>
+        </View>
+      ) : null}
+
+      {/* Copy / share / edit, kept out of the way until the share button is tapped. */}
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)} accessibilityLabel="Close menu">
+          <View style={[styles.menu, { backgroundColor: t.bg, top: insets.top + 56 }]}>
             <ListGroup>
               <ListRow
-                icon="create-outline"
-                title={draft ? 'Edit summary text · edited' : 'Edit summary text'}
-                subtitle={
-                  staleDraft
-                    ? 'Your log changed after you edited. Open to reset if you want the new version.'
-                    : 'Change wording or add notes before you copy or share'
-                }
+                icon="copy-outline"
+                title="Copy as text"
+                chevron={false}
                 onPress={() => {
+                  setMenuOpen(false);
+                  void copy();
+                }}
+              />
+              <ListRow
+                icon="share-outline"
+                title="Share"
+                chevron={false}
+                onPress={() => {
+                  setMenuOpen(false);
+                  void share();
+                }}
+              />
+              <ListRow
+                icon="create-outline"
+                title={draft ? 'Edit text · edited' : 'Edit text'}
+                subtitle={staleDraft ? 'Your log changed since you edited' : undefined}
+                chevron={false}
+                onPress={() => {
+                  setMenuOpen(false);
                   setEditText(text);
                   setEditing(true);
                 }}
               />
-              <ListRow
-                icon="document-text-outline"
-                title={showText ? 'Hide text preview' : 'Preview text'}
-                subtitle="Exactly what Copy and Share will send"
-                onPress={() => setShowText((v) => !v)}
-                chevron={false}
-                right={<Ionicons name={showText ? 'chevron-up' : 'chevron-down'} size={20} color={t.muted} />}
-              />
-              {showText ? (
-                <View style={styles.previewBox}>
-                  <Text selectable style={[styles.preview, { color: t.text }]}>
-                    {text}
-                  </Text>
-                </View>
-              ) : null}
             </ListGroup>
-          </>
-        ) : null}
-        </View>
-      </ScrollView>
-
-      <View style={[styles.actions, { backgroundColor: t.card, borderTopColor: t.border }]}>
-        {notice ? (
-          <View style={[styles.notice, { backgroundColor: t.text }]} pointerEvents="none">
-            <Text style={{ color: t.bg, fontWeight: '700' }}>{notice}</Text>
+            {draft ? <Text style={[styles.menuNote, { color: t.muted }]}>Copy and Share use your edited text.</Text> : null}
           </View>
-        ) : null}
-        <Button label="Copy as text" onPress={copy} disabled={!summary} style={{ flex: 1 }} />
-        <Button label="Share" kind="secondary" onPress={share} disabled={!summary} style={{ flex: 1 }} />
-      </View>
+        </Pressable>
+      </Modal>
 
       <Modal visible={editing} animationType="slide" onRequestClose={() => setEditing(false)}>
         <View style={[styles.editor, { backgroundColor: t.bg, paddingTop: insets.top + 4, paddingBottom: insets.bottom }]}>
@@ -372,7 +388,6 @@ const styles = StyleSheet.create({
   topicName: { flex: 1, fontSize: 17, fontWeight: '700' },
   item: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 3 },
   untouched: { fontSize: 15, lineHeight: 22, paddingHorizontal: 4 },
-  previewBox: { padding: 14 },
   editor: { flex: 1 },
   editorBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   editorTitle: { fontSize: 17, fontWeight: '700' },
@@ -381,7 +396,9 @@ const styles = StyleSheet.create({
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   rangeLabel: { flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   rangeText: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
-  preview: { fontFamily: 'monospace', fontSize: 13, lineHeight: 19 },
-  actions: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
-  notice: { position: 'absolute', top: -46, alignSelf: 'center', left: 24, right: 24, alignItems: 'center', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 12 },
+  notice: { position: 'absolute', bottom: 16, left: 24, right: 24, alignItems: 'center', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 },
+  shareBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  menuBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' },
+  menu: { position: 'absolute', right: 12, width: 260, borderRadius: 18, padding: 6, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  menuNote: { fontSize: 12, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 2 },
 });
