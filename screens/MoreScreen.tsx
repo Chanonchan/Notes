@@ -6,10 +6,9 @@ import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List
 import { Button } from '../components/ui';
 import { setSetting } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
-import { useReminderTime, useStreak, useWorkdays } from '../hooks/useHabits';
+import { useReminderTime, useWorkdays } from '../hooks/useHabits';
 import { REMINDER_OFF } from '../services/reminder';
 import { setAppearance, useAppearance, useTheme, type Appearance } from '../hooks/useTheme';
-import { todayKey } from '../services/dates';
 import type { TabScreenProps } from '../types/navigation';
 
 const APPEARANCE_ORDER: Appearance[] = ['auto', 'light', 'dark'];
@@ -30,10 +29,8 @@ function formatWorkdays(days: number[]): string {
 
 export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
   const t = useTheme();
-  const today = todayKey();
   const appearance = useAppearance();
   const saveAppearance = useMutation((db, a: Appearance) => setSetting(db, 'appearance', a === 'auto' ? null : a));
-  const streak = useStreak();
   const workdays = useWorkdays();
   const reminderTime = useReminderTime();
   const saveSetting = useMutation((db, key: 'reminder_time' | 'workdays', value: string) => setSetting(db, key, value));
@@ -50,26 +47,6 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
             title="Backup & export"
             subtitle="Move your data between Safari and the app, or keep a copy"
             onPress={() => navigation.navigate('Backup')}
-          />
-        </ListGroup>
-
-        <GroupLabel>Habit</GroupLabel>
-        <ListGroup>
-          <ListRow
-            icon={streak?.loggedToday ? 'flame' : 'flame-outline'}
-            iconColor="#F08C00"
-            title={streak && streak.current ? `${streak.current}-workday streak` : 'No streak yet'}
-            subtitle={
-              streak
-                ? [
-                    streak.best ? `Best ${streak.best}` : null,
-                    streak.atRisk ? 'log something today to keep it' : streak.loggedToday ? 'today is logged' : null,
-                    `workdays ${formatWorkdays(workdays)}`,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')
-                : undefined
-            }
           />
         </ListGroup>
 
