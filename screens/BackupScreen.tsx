@@ -202,7 +202,7 @@ export function BackupScreen(_: RootScreenProps<'Backup'>) {
 
       <Modal visible={pasteOpen} transparent animationType="slide" onRequestClose={() => setPasteOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setPasteOpen(false)} accessibilityLabel="Close" />
-        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+        <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge }]}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>Paste backup</Text>
           <Text style={{ color: t.muted, marginBottom: 10 }}>Press and hold in the box, tap Paste, then tap Add.</Text>
           <TextInput
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   helpText: { fontSize: 15, lineHeight: 23 },
   foot: { fontSize: 13, marginTop: 8, paddingHorizontal: 4 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
   pasteBox: { height: 160, borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 13, textAlignVertical: 'top' },
   sheetActions: { flexDirection: 'row', gap: 10, marginTop: 12 },

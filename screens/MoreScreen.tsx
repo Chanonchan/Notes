@@ -78,7 +78,7 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
 
       <Modal visible={sheet !== null} transparent animationType="slide" onRequestClose={() => setSheet(null)}>
         <Pressable style={styles.backdrop} onPress={() => setSheet(null)} accessibilityLabel="Close" />
-        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+        <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge }]}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>{sheet === 'reminder' ? 'Daily reminder' : 'Workdays'}</Text>
           {sheet === 'reminder' ? (
             <View style={styles.hours}>
@@ -128,7 +128,7 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
 const styles = StyleSheet.create({
   container: { paddingBottom: 48 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '85%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '85%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 12 },
   body: { paddingHorizontal: 16 },
   hours: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10 },

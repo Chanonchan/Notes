@@ -143,7 +143,7 @@ export function TopicSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close topic list" />
-      <View style={[styles.sheet, { backgroundColor: t.bg, paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge, paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.sheetHeader}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>{newName !== null ? 'New topic' : title}</Text>
           <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: {
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
     position: 'absolute',
     left: 0,
     right: 0,

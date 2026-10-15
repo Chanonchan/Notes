@@ -246,7 +246,7 @@ function DatePresetSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
-      <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+      <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge }]}>
         <Text style={[styles.sheetTitle, { color: t.text }]}>Filter by date</Text>
         <ListGroup>
           {options.map((o) => (
@@ -278,6 +278,6 @@ const styles = StyleSheet.create({
   hintText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   none: { textAlign: 'center', paddingVertical: 40, fontSize: 15 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 8 },
 });

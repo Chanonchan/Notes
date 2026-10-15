@@ -35,7 +35,7 @@ export function Chip({
       ]}
     >
       {color && !selected ? <View style={[styles.dot, { backgroundColor: color }]} /> : null}
-      <Text style={[styles.chipText, { color: selected ? '#FFFFFF' : t.text }]} numberOfLines={1}>
+      <Text style={[styles.chipText, { color: selected ? t.onPrimary : t.text }]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -57,7 +57,7 @@ export function Button({
 }) {
   const t = useTheme();
   const bg = kind === 'primary' ? t.primary : kind === 'danger' ? t.danger : t.chip;
-  const fg = kind === 'secondary' ? t.text : kind === 'primary' ? t.onPrimary : '#FFFFFF';
+  const fg = kind === 'secondary' ? t.text : t.onPrimary;
   return (
     <Pressable
       onPress={onPress}

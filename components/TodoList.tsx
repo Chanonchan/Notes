@@ -165,7 +165,7 @@ function UpdateSheet({
   return (
     <Modal visible transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close" />
-      <View style={[styles.sheet, { backgroundColor: t.bg, paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge, paddingBottom: insets.bottom + 16 }]}>
         <Text style={[styles.sheetTitle, { color: t.text }]} numberOfLines={2}>
           {job.text}
         </Text>
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   rowWrap: { flexDirection: 'row', alignItems: 'center' },
   updateBtn: { marginRight: 12, paddingHorizontal: 12, height: 32, borderRadius: 16, justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '90%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16 },
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '90%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16 },
   sheetTitle: { fontSize: 19, fontWeight: '800', marginBottom: 2 },
   noteBox: { padding: 12, gap: 10 },
   noteInput: { minHeight: 90, fontSize: 16, textAlignVertical: 'top' },

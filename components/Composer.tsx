@@ -94,8 +94,8 @@ export function Composer({
       {undo ? <UndoBar undo={undo} onUndo={onUndo} style={styles.undoAbove} /> : null}
       {toast ? (
         <View style={[styles.toast, { backgroundColor: t.types.done }]} pointerEvents="none">
-          <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-          <Text style={styles.toastText}>Logged</Text>
+          <Ionicons name="checkmark-circle" size={18} color={t.onPrimary} />
+          <Text style={[styles.toastText, { color: t.onPrimary }]}>Logged</Text>
         </View>
       ) : null}
 
@@ -176,7 +176,7 @@ export function UndoBar({ undo, onUndo, style }: { undo: UndoInfo; onUndo?: () =
         {ENTRY_TYPE_LABELS[undo.newType]}: {undo.text}
       </Text>
       <Pressable onPress={onUndo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Undo">
-        <Text style={{ color: t.dark ? t.primary : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
+        <Text style={{ color: t.dark ? '#1F5FD1' : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
       </Pressable>
     </View>
   );

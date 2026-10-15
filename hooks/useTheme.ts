@@ -17,22 +17,32 @@ const light = {
   primary: '#2F6FEB',
   onPrimary: '#FFFFFF',
   chip: '#EDEFF3',
+  /** Selected segment on a chip-coloured track. */
+  raised: '#FFFFFF',
+  /** Bottom sheets and popups, and the edge that separates them from the dimmed page. */
+  sheet: '#F5F6F8',
+  sheetEdge: 'transparent',
   danger: '#D93A2B',
   types: { done: '#22A06B', in_progress: '#2F6FEB', blocked: '#D93A2B', next: '#8A919E' } as Record<EntryType, string>,
 };
 
 const dark: typeof light = {
-  // Charcoal rather than near-black, so dark mode doesn't feel heavy.
-  bg: '#1A1C21',
-  card: '#25282F',
-  text: '#F2F3F5',
-  muted: '#A1A7B3',
-  border: '#343842',
-  primary: '#5B92F5',
-  onPrimary: '#FFFFFF',
-  chip: '#30343C',
-  danger: '#F2766A',
-  types: { done: '#3DC48A', in_progress: '#5B92F5', blocked: '#F2766A', next: '#A1A7B3' },
+  // iPhone-style dark: black page, dark grey cards that stand clear of it,
+  // neutral (untinted) greys and a slightly soft white so text doesn't glow.
+  bg: '#000000',
+  card: '#1C1C1E',
+  text: '#E9E9EE',
+  muted: '#9D9DA5',
+  border: '#38383A',
+  // Brighter blue with dark text on it, so buttons and the selected tab read clearly.
+  primary: '#4D94FF',
+  onPrimary: '#06142B',
+  chip: '#2C2C2E',
+  raised: '#3A3A3C',
+  sheet: '#111113',
+  sheetEdge: '#48484A',
+  danger: '#FF6B5E',
+  types: { done: '#34C77B', in_progress: '#4D94FF', blocked: '#FF6B5E', next: '#9D9DA5' },
 };
 
 export type Theme = typeof light & { dark: boolean };

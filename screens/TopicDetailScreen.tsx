@@ -212,7 +212,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
       <Modal visible={composing} transparent animationType="slide" onRequestClose={() => setComposing(false)}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <Pressable style={styles.backdrop} onPress={() => setComposing(false)} accessibilityLabel="Close" />
-          <View style={[styles.composeSheet, { backgroundColor: t.card, paddingBottom: insets.bottom }]}>
+          <View style={[styles.composeSheet, { backgroundColor: t.card, borderColor: t.sheetEdge, paddingBottom: insets.bottom }]}>
             <View style={styles.composeHead}>
               <Text style={[styles.composeTitle, { color: t.text }]} numberOfLines={1}>
                 Log work on {topic.name}
@@ -238,7 +238,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 
       <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} accessibilityLabel="Close" />
-        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+        <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge }]}>
           <Text style={[styles.sheetTitle, { color: t.text, marginBottom: 12 }]}>{topic.name}</Text>
           <ListGroup>
             <ListRow
@@ -286,7 +286,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 
       <Modal visible={merging} transparent animationType="slide" onRequestClose={() => setMerging(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMerging(false)} accessibilityLabel="Close" />
-        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+        <View style={[styles.sheet, { backgroundColor: t.sheet, borderColor: t.sheetEdge }]}>
           <Text style={[styles.sheetTitle, { color: t.text }]}>Merge “{topic.name}” into…</Text>
           <Text style={{ color: t.muted, marginBottom: 12 }}>
             All its entries move to the topic you pick, then “{topic.name}” is deleted.
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   floatingUndo: { position: 'absolute', left: 16, right: 16 },
-  composeSheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
+  composeSheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
   composeHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14 },
   composeTitle: { flex: 1, fontSize: 18, fontWeight: '800' },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -363,6 +363,6 @@ const styles = StyleSheet.create({
   note: { fontSize: 13, marginTop: 8, paddingHorizontal: 4 },
   empty: { textAlign: 'center', paddingVertical: 32, fontSize: 15 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
+  sheet: { borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32 },
   sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
 });

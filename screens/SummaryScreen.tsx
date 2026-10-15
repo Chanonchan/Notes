@@ -164,7 +164,7 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
       {/* Copy / share / edit, kept out of the way until the share button is tapped. */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)} accessibilityLabel="Close menu">
-          <View style={[styles.menu, { backgroundColor: t.bg, top: insets.top + 56 }]}>
+          <View style={[styles.menu, { backgroundColor: t.sheet, borderColor: t.sheetEdge, borderWidth: 1, top: insets.top + 56 }]}>
             <ListGroup>
               <ListRow
                 icon="copy-outline"

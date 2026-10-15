@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({
             onPress={() => onChange(o.value)}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            style={[styles.segment, selected && [styles.selected, { backgroundColor: t.card }]]}
+            style={[styles.segment, selected && [styles.selected, { backgroundColor: t.raised }]]}
           >
             <Text style={[styles.label, { color: selected ? t.text : t.muted }]}>{o.label}</Text>
           </Pressable>

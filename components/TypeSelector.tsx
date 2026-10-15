@@ -16,7 +16,7 @@ export function TypeSelector({ value, onChange }: { value: EntryType; onChange: 
             onPress={() => onChange(type)}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            style={[styles.segment, selected && [styles.selected, { backgroundColor: t.card }]]}
+            style={[styles.segment, selected && [styles.selected, { backgroundColor: t.raised }]]}
           >
             <Text
               style={[styles.label, { color: selected ? t.types[type] : t.muted }]}
