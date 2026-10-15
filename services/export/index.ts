@@ -1,4 +1,4 @@
-import { createEntry, findTopicByName, listTopics, queryEntries } from '../../db';
+import { addTopicTags, createEntry, findTopicByName, listTopicTags, listTopics, queryEntries } from '../../db';
 import type { Db } from '../../db/client';
 import { ENTRY_TYPES, ENTRY_TYPE_LABELS, type Entry, type EntryType, type Topic } from '../../types';
 import { formatDayLong, formatDuration, formatTime } from '../dates';
@@ -11,15 +11,18 @@ export interface Backup {
   format: typeof BACKUP_FORMAT;
   version: number;
   exportedAt: string;
-  topics: Topic[];
+  /** `tags` was added later; older backups don't have it. */
+  topics: (Topic & { tags?: string[] })[];
   entries: Entry[];
 }
 
 export async function buildBackup(db: Db): Promise<Backup> {
-  const [topics, entries] = await Promise.all([
+  const [list, entries, tags] = await Promise.all([
     listTopics(db, { includeArchived: true }),
     queryEntries(db, 'SELECT * FROM entries ORDER BY day, created_at, id'),
+    listTopicTags(db),
   ]);
+  const topics = list.map((t) => ({ ...t, tags: tags.get(t.id) ?? [] }));
   return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: new Date().toISOString(), topics, entries };
 }
 
@@ -31,6 +34,7 @@ export async function exportJson(db: Db): Promise<string> {
 export async function exportText(db: Db): Promise<string> {
   const { topics, entries } = await buildBackup(db);
   const names = new Map(topics.map((t) => [t.id, t.name]));
+  const tagged = topics.filter((t) => t.tags?.length);
   const lines = [`DayLog export · ${entries.length} entries · ${new Date().toLocaleString()}`];
   let day = '';
   for (const e of entries) {
@@ -43,6 +47,10 @@ export async function exportText(db: Db): Promise<string> {
     lines.push(
       `  ${formatTime(e.createdAt)}  [${ENTRY_TYPE_LABELS[e.type]}]${topic ? ` ${topic}:` : ''} ${e.text}${extra.length ? ` (${extra.join(', ')})` : ''}`,
     );
+  }
+  if (tagged.length) {
+    lines.push('', 'Topic tags');
+    for (const t of tagged) lines.push(`  ${t.name}: ${t.tags!.map((x) => `#${x}`).join(' ')}`);
   }
   return lines.join('\n');
 }
@@ -97,9 +105,11 @@ export async function importBackup(db: Db, backup: Backup): Promise<ImportResult
     for (const t of backup.topics) {
       const name = String(t.name ?? '').trim();
       if (!name) continue;
+      const tags = Array.isArray(t.tags) ? t.tags.filter((x): x is string => typeof x === 'string') : [];
       const found = await findTopicByName(db, name);
       if (found) {
         topicIds.set(t.id, found.id);
+        await addTopicTags(db, found.id, tags);
         continue;
       }
       const res = await db.run('INSERT INTO topics (name, color, archived, created_at) VALUES (?, ?, ?, ?)', [
@@ -109,6 +119,7 @@ export async function importBackup(db: Db, backup: Backup): Promise<ImportResult
         Number(t.createdAt) || Date.now(),
       ]);
       topicIds.set(t.id, res.lastInsertRowId);
+      await addTopicTags(db, res.lastInsertRowId, tags);
       result.topicsAdded++;
     }
 
@@ -151,6 +162,7 @@ export async function storageStats(db: Db): Promise<{ entries: number; topics: n
 export async function deleteAllData(db: Db): Promise<void> {
   await db.transaction(async () => {
     await db.run('DELETE FROM entry_tags');
+    await db.run('DELETE FROM topic_tags');
     await db.run('DELETE FROM entries');
     await db.run('DELETE FROM tags');
     await db.run('DELETE FROM topics');

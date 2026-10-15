@@ -9,7 +9,7 @@ import { ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { TodoList } from '../components/TodoList';
 import { TopicPicker } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopic, listOpenItems, OPEN_TYPES, setLastTopicId, updateEntry } from '../db';
+import { createEntry, createTopicWithTags, listOpenItems, OPEN_TYPES, setLastTopicId, updateEntry } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useReminder } from '../hooks/useHabits';
@@ -77,7 +77,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
     await createEntry(db, { topicId, text, type, durationMinutes: duration });
     await setLastTopicId(db, topicId);
   });
-  const addTopic = useMutation((db, name: string) => createTopic(db, name));
+  const addTopic = useMutation((db, name: string, tags: string[]) => createTopicWithTags(db, name, tags));
 
   const canAdd = text.trim().length > 0 && !saving;
   const submit = async () => {

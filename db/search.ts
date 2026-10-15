@@ -3,7 +3,7 @@ import type { Db, SqlValue } from './client';
 import { queryEntries } from './entries';
 
 export interface SearchFilters {
-  /** Words to find (all must match, case-insensitive) in the text or tags. */
+  /** Words to find (all must match, case-insensitive) in the text, or the entry's or its topic's tags. */
   query?: string;
   /** undefined = any topic; null = entries without a topic. */
   topicId?: number | null;
@@ -33,8 +33,11 @@ export async function searchEntries(db: Db, f: SearchFilters): Promise<Entry[]> 
     const like = `%${escapeLike(w)}%`;
     where.push(`(e.text LIKE ? ESCAPE '\\' OR EXISTS (
       SELECT 1 FROM entry_tags et JOIN tags t ON t.id = et.tag_id
-      WHERE et.entry_id = e.id AND t.name LIKE ? ESCAPE '\\'))`);
-    params.push(like, like.replace(/^%#?/, '%'));
+      WHERE et.entry_id = e.id AND t.name LIKE ? ESCAPE '\\') OR EXISTS (
+      SELECT 1 FROM topic_tags tt JOIN tags t ON t.id = tt.tag_id
+      WHERE tt.topic_id = e.topic_id AND t.name LIKE ? ESCAPE '\\'))`);
+    const tagLike = like.replace(/^%#?/, '%');
+    params.push(like, tagLike, tagLike);
   }
   if (f.topicId === null) where.push('e.topic_id IS NULL');
   else if (f.topicId !== undefined) {

@@ -4,7 +4,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listTopicStats } from '../db';
-import { ListGroup, ListRow } from './List';
+import { GroupLabel, ListGroup, ListRow } from './List';
+import { TagEditor, withDraft } from './TopicTags';
+import { Button } from './ui';
 import { useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatRelativeDay } from '../services/dates';
@@ -14,7 +16,7 @@ interface Props {
   topics: Topic[];
   value: number | null;
   onChange: (id: number | null) => void;
-  onCreate: (name: string) => Promise<Topic>;
+  onCreate: (name: string, tags: string[]) => Promise<Topic>;
   /** Topic suggested from the entry text; shown as a one-tap chip. */
   suggestedId?: number | null;
 }
@@ -66,8 +68,8 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
           onChange(id);
           setOpen(false);
         }}
-        onCreate={async (name) => {
-          const topic = await onCreate(name);
+        onCreate={async (name, tags) => {
+          const topic = await onCreate(name, tags);
           onChange(topic.id);
           setOpen(false);
         }}
@@ -91,7 +93,7 @@ export function TopicSheet({
   onClose: () => void;
   onPick: (id: number | null) => void;
   /** Omit to hide "Create …". */
-  onCreate?: (name: string) => Promise<void>;
+  onCreate?: (name: string, tags: string[]) => Promise<void>;
   /** Label of the first row, which picks `null`. */
   noneLabel?: string;
   title?: string;
@@ -103,19 +105,39 @@ export function TopicSheet({
   const { data } = useQuery((db) => listTopicStats(db));
   const all = data ?? [];
 
+  // "New topic" step: name + tags, shown after tapping Create.
+  const [newName, setNewName] = useState<string | null>(null);
+  const [newTags, setNewTags] = useState<string[]>([]);
+  const [tagDraft, setTagDraft] = useState('');
+
   const q = query.trim().toLowerCase();
-  const filtered = useMemo(() => (q ? all.filter((s) => s.topic.name.toLowerCase().includes(q)) : all), [all, q]);
+  // Matches the name or any of the topic's tags.
+  const filtered = useMemo(
+    () => (q ? all.filter((s) => s.topic.name.toLowerCase().includes(q) || s.tags.some((x) => x.toLowerCase().includes(q))) : all),
+    [all, q],
+  );
   const exact = all.some((s) => s.topic.name.toLowerCase() === q);
 
-  const close = () => {
+  const reset = () => {
     setQuery('');
+    setNewName(null);
+    setNewTags([]);
+    setTagDraft('');
+  };
+  const close = () => {
+    reset();
     onClose();
   };
-  const create = async () => {
+  const startCreate = () => {
     if (!q || !onCreate) return;
-    const name = query.trim();
-    setQuery('');
-    await onCreate(name);
+    setNewName(query.trim());
+  };
+  const create = async () => {
+    const name = newName?.trim();
+    if (!name || !onCreate) return;
+    const tags = withDraft(newTags, tagDraft);
+    reset();
+    await onCreate(name, tags);
   };
 
   return (
@@ -123,18 +145,41 @@ export function TopicSheet({
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close topic list" />
       <View style={[styles.sheet, { backgroundColor: t.bg, paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.sheetHeader}>
-          <Text style={[styles.sheetTitle, { color: t.text }]}>{title}</Text>
+          <Text style={[styles.sheetTitle, { color: t.text }]}>{newName !== null ? 'New topic' : title}</Text>
           <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={26} color={t.muted} />
           </Pressable>
         </View>
 
+        {newName !== null ? (
+          <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+            <GroupLabel>Name</GroupLabel>
+            <View style={[styles.search, { backgroundColor: t.card, borderColor: t.border }]}>
+              <Ionicons name="pricetag-outline" size={18} color={t.muted} />
+              <TextInput
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Topic name"
+                placeholderTextColor={t.muted}
+                style={[styles.searchInput, { color: t.text }]}
+                accessibilityLabel="New topic name"
+              />
+            </View>
+            <GroupLabel>Tags (optional)</GroupLabel>
+            <TagEditor tags={newTags} onChange={setNewTags} draft={tagDraft} onDraftChange={setTagDraft} autoFocus />
+            <View style={styles.createActions}>
+              <Button label="Back" kind="secondary" onPress={() => setNewName(null)} style={{ flex: 1 }} />
+              <Button label="Create topic" onPress={create} disabled={!newName.trim()} style={{ flex: 1 }} />
+            </View>
+          </ScrollView>
+        ) : (
+        <>
         <View style={[styles.search, { backgroundColor: t.card, borderColor: t.border }]}>
           <Ionicons name="search" size={18} color={t.muted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            onSubmitEditing={() => (filtered.length === 1 && !exact ? onPick(filtered[0].topic.id) : create())}
+            onSubmitEditing={() => (filtered.length === 1 && !exact ? onPick(filtered[0].topic.id) : startCreate())}
             placeholder={onCreate ? 'Search or type a new topic' : 'Search topics'}
             placeholderTextColor={t.muted}
             returnKeyType="done"
@@ -146,7 +191,7 @@ export function TopicSheet({
         <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
           <ListGroup>
             {q && !exact && onCreate ? (
-              <ListRow icon="add-circle" title={`Create “${query.trim()}”`} accessibilityLabel={`Create “${query.trim()}”`} onPress={create} chevron={false} />
+              <ListRow icon="add-circle" title={`Create “${query.trim()}”`} accessibilityLabel={`Create “${query.trim()}”`} onPress={startCreate} chevron={false} />
             ) : null}
             {!q ? (
               <ListRow
@@ -166,7 +211,9 @@ export function TopicSheet({
                 title={s.topic.name}
                 titleLines={1}
                 accessibilityLabel={s.topic.name}
-                subtitle={s.lastDay ? `Last used ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'Not used yet'}
+                subtitle={[s.tags.length ? s.tags.map((x) => `#${x}`).join(' ') : null, s.lastDay ? `last used ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'not used yet']
+                  .filter(Boolean)
+                  .join(' · ')}
                 onPress={() => onPick(s.topic.id)}
                 chevron={false}
                 right={s.topic.id === value ? <Ionicons name="checkmark" size={22} color={t.primary} /> : undefined}
@@ -179,6 +226,8 @@ export function TopicSheet({
             </Text>
           ) : null}
         </ScrollView>
+        </>
+        )}
       </View>
     </Modal>
   );
@@ -234,5 +283,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 16, minHeight: 46 },
   list: { flexGrow: 0 },
+  createActions: { flexDirection: 'row', gap: 10, marginTop: 16, marginBottom: 8 },
   hint: { textAlign: 'center', paddingVertical: 24, fontSize: 15 },
 });

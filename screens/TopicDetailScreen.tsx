@@ -5,8 +5,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
 import { GroupLabel, IconTile, ListGroup, ListRow } from '../components/List';
 import { TopicStatusBadge } from '../components/TopicStatusBadge';
+import { TagChips, TagEditor, withDraft } from '../components/TopicTags';
 import { Button, Chip } from '../components/ui';
-import { listEntriesByTopic, listTopicStats, mergeTopics, renameTopic, setTopicArchived } from '../db';
+import { listEntriesByTopic, listTopicStats, mergeTopics, renameTopic, setTopicArchived, setTopicTags } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useEntryActions } from '../hooks/useEntryActions';
 import { useTheme } from '../hooks/useTheme';
@@ -28,6 +29,9 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState('');
   const [merging, setMerging] = useState(false);
+  const [editingTags, setEditingTags] = useState<string[] | null>(null);
+  const [tagDraft, setTagDraft] = useState('');
+  const saveTags = useMutation((db, tags: string[]) => setTopicTags(db, topicId, tags));
 
   const rename = useMutation((db, n: string) => renameTopic(db, topicId, n));
   const archive = useMutation((db, v: boolean) => setTopicArchived(db, topicId, v));
@@ -103,6 +107,42 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
         <TopicStatusBadge stats={stats} />
       </View>
 
+      {editingTags ? (
+        <View style={styles.tagsEdit}>
+          <TagEditor tags={editingTags} onChange={setEditingTags} draft={tagDraft} onDraftChange={setTagDraft} autoFocus />
+          <View style={styles.tagsActions}>
+            <Button
+              label="Cancel"
+              kind="secondary"
+              onPress={() => {
+                setEditingTags(null);
+                setTagDraft('');
+              }}
+              style={{ flex: 1 }}
+            />
+            <Button
+              label="Save tags"
+              onPress={async () => {
+                await saveTags(withDraft(editingTags, tagDraft));
+                setEditingTags(null);
+                setTagDraft('');
+              }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+      ) : (
+        <Pressable
+          onPress={() => setEditingTags(stats.tags)}
+          accessibilityRole="button"
+          accessibilityLabel={stats.tags.length ? `Tags: ${stats.tags.join(', ')}. Tap to edit.` : 'Add tags'}
+          style={styles.tagsRow}
+        >
+          <TagChips tags={stats.tags} />
+          <Text style={{ color: t.primary, fontSize: 14, fontWeight: '700' }}>{stats.tags.length ? 'Edit tags' : '+ Add tags'}</Text>
+        </Pressable>
+      )}
+
       {entries.some((e) => e.type === 'blocked') ? (
         <View>
           <GroupLabel right={`${entries.filter((e) => e.type === 'blocked').length}`}>Blocked</GroupLabel>
@@ -158,6 +198,15 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
                 setMenuOpen(false);
                 setName(topic.name);
                 setRenaming(true);
+              }}
+            />
+            <ListRow
+              icon="pricetags-outline"
+              title="Edit tags"
+              chevron={false}
+              onPress={() => {
+                setMenuOpen(false);
+                setEditingTags(stats.tags);
               }}
             />
             <ListRow
@@ -236,6 +285,9 @@ const styles = StyleSheet.create({
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
   heading: { fontSize: 28, fontWeight: '800', lineHeight: 34, paddingHorizontal: 4 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginTop: 10 },
+  tagsEdit: { marginTop: 12, gap: 10 },
+  tagsActions: { flexDirection: 'row', gap: 10 },
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginTop: 4 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   nameInput: { flex: 1, fontSize: 17, borderWidth: 2, borderRadius: 10, paddingHorizontal: 10, minHeight: 44 },

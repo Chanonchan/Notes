@@ -1,5 +1,6 @@
 import type { Topic } from '../types';
 import type { Db } from './client';
+import { addTopicTags, listTopicTags } from './tags';
 
 export const TOPIC_COLORS = [
   '#4F7DF3', '#E5734A', '#2BA57E', '#B55FD6', '#D9A21B',
@@ -67,6 +68,13 @@ export async function createTopic(db: Db, name: string, color?: string): Promise
   return { id: res.lastInsertRowId, name: clean, color: pick, archived: false, createdAt: now };
 }
 
+/** Creates (or reuses) a topic and adds the given tags to it. */
+export async function createTopicWithTags(db: Db, name: string, tags: string[] = []): Promise<Topic> {
+  const topic = await createTopic(db, name);
+  if (tags.length) await addTopicTags(db, topic.id, tags);
+  return topic;
+}
+
 /** Renames a topic. Fails if another topic already has that name. */
 export async function renameTopic(db: Db, id: number, name: string): Promise<Topic> {
   const clean = name.trim().replace(/\s+/g, ' ');
@@ -92,6 +100,7 @@ export async function mergeTopics(db: Db, sourceId: number, targetId: number): P
   if (!source || !target) throw new Error('Topic not found');
   await db.transaction(async () => {
     await db.run('UPDATE entries SET topic_id = ? WHERE topic_id = ?', [targetId, sourceId]);
+    await db.run('INSERT OR IGNORE INTO topic_tags (topic_id, tag_id) SELECT ?, tag_id FROM topic_tags WHERE topic_id = ?', [targetId, sourceId]);
     await db.run('DELETE FROM topics WHERE id = ?', [sourceId]);
     if (target.archived && !source.archived) {
       await db.run('UPDATE topics SET archived = 0 WHERE id = ?', [targetId]);
@@ -115,6 +124,8 @@ export interface TopicStats {
   inProgressCount: number;
   blockedCount: number;
   nextCount: number;
+  /** The topic's tags, A–Z. */
+  tags: string[];
 }
 
 /** Every topic with its totals, most recently active first. */
@@ -148,8 +159,10 @@ export async function listTopicStats(db: Db, opts: { includeArchived?: boolean }
      GROUP BY t.id
      ORDER BY t.archived, last_day IS NULL, last_day DESC, MAX(e.created_at) DESC, t.name COLLATE NOCASE`,
   );
+  const tags = await listTopicTags(db);
   return rows.map((r) => ({
     topic: toTopic(r),
+    tags: tags.get(r.id) ?? [],
     entryCount: r.entry_count,
     totalMinutes: r.total_minutes,
     daysActive: r.days_active,

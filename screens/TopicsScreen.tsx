@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { TopicStatusBadge } from '../components/TopicStatusBadge';
+import { TagChips } from '../components/TopicTags';
 import { Chip } from '../components/ui';
 import { listTopicStats, type TopicStats } from '../db';
 import { useQuery } from '../hooks/useDb';
@@ -32,7 +33,12 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
       icon="pricetag-outline"
       title={s.topic.name}
       subtitle={topicSubtitle(s)}
-      below={<TopicStatusBadge stats={s} style={{ marginTop: 6 }} />}
+      below={
+        <View style={styles.below}>
+          <TopicStatusBadge stats={s} />
+          <TagChips tags={s.tags} />
+        </View>
+      }
       onPress={() => navigation.navigate('TopicDetail', { topicId: s.topic.id })}
     />
   );
@@ -69,5 +75,6 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
 const styles = StyleSheet.create({
   container: { paddingBottom: 48 },
   body: { paddingHorizontal: 16 },
+  below: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 },
   empty: { fontSize: 15, textAlign: 'center', paddingVertical: 32 },
 });

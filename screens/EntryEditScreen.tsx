@@ -5,7 +5,7 @@ import { DurationChips } from '../components/DurationChips';
 import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
 import { TopicSheet } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopic, deleteEntry, getEntry, getLastTopicId, updateEntry } from '../db';
+import { createEntry, createTopicWithTags, deleteEntry, getEntry, getLastTopicId, updateEntry } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
@@ -26,7 +26,6 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const [topicId, setTopicId] = useState<number | null>(null);
   const [type, setType] = useState<EntryType>('done');
   const [duration, setDuration] = useState<number | null>(null);
-  const [tags, setTags] = useState('');
   const [day, setDay] = useState<DayKey>(route.params.day ?? todayKey());
   const [pickingTopic, setPickingTopic] = useState(false);
 
@@ -65,7 +64,6 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       setTopicId(e.topicId);
       setType(e.type);
       setDuration(e.durationMinutes);
-      setTags(e.tags.join(', '));
       setDay(e.day);
       setLoaded(true);
     });
@@ -78,13 +76,12 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       type,
       durationMinutes: duration,
       day,
-      tags: tags.split(',').map((s) => s.trim()).filter(Boolean),
     };
     if (entryId == null) await createEntry(d, fields);
     else await updateEntry(d, entryId, fields);
   });
   const remove = useMutation((d) => deleteEntry(d, entryId!));
-  const addTopic = useMutation((d, name: string) => createTopic(d, name));
+  const addTopic = useMutation((d, name: string, tags: string[]) => createTopicWithTags(d, name, tags));
 
   const onSave = async () => {
     try {
@@ -151,21 +148,6 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       <GroupLabel>Time spent</GroupLabel>
       <DurationChips value={duration} onChange={setDuration} />
 
-      <GroupLabel>Tags</GroupLabel>
-      <ListGroup>
-        <View style={styles.tagsRow}>
-          <IconTile icon="pricetags-outline" color={t.primary} />
-          <TextInput
-            value={tags}
-            onChangeText={setTags}
-            placeholder="comma, separated"
-            placeholderTextColor={t.muted}
-            autoCapitalize="none"
-            style={[styles.tags, { color: t.text }]}
-            accessibilityLabel="Tags"
-          />
-        </View>
-      </ListGroup>
 
       {!isNew ? (
         <ListGroup style={{ marginTop: 28 }}>
@@ -193,8 +175,8 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
           setTopicId(id);
           setPickingTopic(false);
         }}
-        onCreate={async (name) => {
-          const created = await addTopic(name);
+        onCreate={async (name, tags) => {
+          const created = await addTopic(name, tags);
           setTopicId(created.id);
           setPickingTopic(false);
         }}
@@ -207,6 +189,4 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   input: { minHeight: 110, fontSize: 18, lineHeight: 25, padding: 14, textAlignVertical: 'top' },
   dayButtons: { flexDirection: 'row', gap: 8 },
-  tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 60 },
-  tags: { flex: 1, fontSize: 16, minHeight: 48 },
 });
