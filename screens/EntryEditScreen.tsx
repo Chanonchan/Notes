@@ -1,11 +1,10 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DurationChips } from '../components/DurationChips';
 import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
 import { TopicSheet } from '../components/TopicPicker';
 import { TypeSelector } from '../components/TypeSelector';
-import { Button } from '../components/ui';
 import { createEntry, createTopic, deleteEntry, getEntry, getLastTopicId, updateEntry } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
@@ -31,9 +30,27 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const [day, setDay] = useState<DayKey>(route.params.day ?? todayKey());
   const [pickingTopic, setPickingTopic] = useState(false);
 
+  // Save lives top right; the ref keeps the header button on the latest form state.
+  const onSaveRef = useRef<() => void>(() => {});
+  const canSave = loaded && !!text.trim();
   useLayoutEffect(() => {
-    navigation.setOptions({ title: isNew ? 'New entry' : 'Edit entry' });
-  }, [navigation, isNew]);
+    navigation.setOptions({
+      title: isNew ? 'New entry' : 'Edit entry',
+      headerRight: () => (
+        <Pressable
+          onPress={() => canSave && onSaveRef.current()}
+          disabled={!canSave}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Save"
+          accessibilityState={{ disabled: !canSave }}
+          style={{ paddingHorizontal: 8 }}
+        >
+          <Text style={{ color: canSave ? t.primary : t.muted, fontSize: 17, fontWeight: '700' }}>Save</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, isNew, canSave, t.primary, t.muted]);
 
   // New entries start on the last used topic, like quick capture.
   useEffect(() => {
@@ -69,9 +86,6 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const remove = useMutation((d) => deleteEntry(d, entryId!));
   const addTopic = useMutation((d, name: string) => createTopic(d, name));
 
-  if (!loaded) return <View style={{ flex: 1, backgroundColor: t.bg }} />;
-
-  const today = todayKey();
   const onSave = async () => {
     try {
       await save();
@@ -80,6 +94,11 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       showError('Could not save', e);
     }
   };
+  onSaveRef.current = onSave;
+
+  if (!loaded) return <View style={{ flex: 1, backgroundColor: t.bg }} />;
+
+  const today = todayKey();
 
   const topic = topics.find((x) => x.id === topicId);
 
@@ -148,9 +167,8 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
         </View>
       </ListGroup>
 
-      <Button label="Save" onPress={onSave} disabled={!text.trim()} style={styles.save} />
       {!isNew ? (
-        <ListGroup style={{ marginTop: 16 }}>
+        <ListGroup style={{ marginTop: 28 }}>
           <ListRow
             icon="trash-outline"
             title="Delete entry"
@@ -191,5 +209,4 @@ const styles = StyleSheet.create({
   dayButtons: { flexDirection: 'row', gap: 8 },
   tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 60 },
   tags: { flex: 1, fontSize: 16, minHeight: 48 },
-  save: { marginTop: 24 },
 });

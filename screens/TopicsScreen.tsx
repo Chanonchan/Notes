@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
+import { TopicProgress } from '../components/TopicProgress';
 import { Chip } from '../components/ui';
 import { listTopicStats, type TopicStats } from '../db';
 import { useQuery } from '../hooks/useDb';
@@ -12,7 +13,6 @@ import type { TabScreenProps } from '../types/navigation';
 export function topicSubtitle(s: TopicStats): string {
   const parts = [`${s.entryCount} ${s.entryCount === 1 ? 'entry' : 'entries'}`];
   if (s.totalMinutes) parts.push(formatDuration(s.totalMinutes));
-  if (s.blockedCount) parts.push(`${s.blockedCount} blocked`);
   parts.push(s.lastDay ? `last ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'not used yet');
   return parts.join(' · ');
 }
@@ -32,6 +32,7 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
       title={s.topic.name}
       titleLines={1}
       subtitle={topicSubtitle(s)}
+      below={<TopicProgress stats={s} />}
       onPress={() => navigation.navigate('TopicDetail', { topicId: s.topic.id })}
     />
   );

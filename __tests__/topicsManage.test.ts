@@ -32,7 +32,9 @@ describe('topic stats', () => {
     expect(stats.map((s) => s.topic.name)).toEqual(['Web', 'Idle']);
     expect(stats[0]).toMatchObject({ entryCount: 3, totalMinutes: 90, daysActive: 2, lastDay: '2026-01-07', blockedCount: 0 });
     await createEntry(db, { topicId: web.id, text: 'Waiting on keys', day: '2026-01-07', type: 'blocked' });
-    expect((await listTopicStats(db))[0].blockedCount).toBe(1);
+    await createEntry(db, { topicId: web.id, text: 'Build API', day: '2026-01-07', type: 'in_progress' });
+    await createEntry(db, { topicId: web.id, text: 'Launch', day: '2026-01-07', type: 'next' });
+    expect((await listTopicStats(db))[0]).toMatchObject({ doneCount: 3, inProgressCount: 1, blockedCount: 1, nextCount: 1 });
     expect(stats.find((s) => s.topic.id === idle.id)).toMatchObject({ entryCount: 0, totalMinutes: 0, daysActive: 0, lastDay: null });
   });
 

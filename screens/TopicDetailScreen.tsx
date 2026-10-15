@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 
 import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
 import { GroupLabel, IconTile, ListGroup, ListRow } from '../components/List';
+import { TopicProgress } from '../components/TopicProgress';
 import { Button, Chip } from '../components/ui';
 import { listEntriesByTopic, listTopicStats, mergeTopics, renameTopic, setTopicArchived } from '../db';
 import { useMutation, useQuery } from '../hooks/useDb';
@@ -94,6 +95,13 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
           {topic.archived ? ' · archived' : ''}
         </Text>
       </View>
+      {stats.entryCount ? (
+        <ListGroup>
+          <View style={styles.progress}>
+            <TopicProgress stats={stats} large />
+          </View>
+        </ListGroup>
+      ) : null}
 
       {entries.some((e) => e.type === 'blocked') ? (
         <View>
@@ -224,6 +232,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 }
 
 const styles = StyleSheet.create({
+  progress: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 14 },
   container: { padding: 16, paddingBottom: 48 },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },

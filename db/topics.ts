@@ -110,19 +110,25 @@ export interface TopicStats {
   daysActive: number;
   /** Most recent day with an entry, or null if none. */
   lastDay: string | null;
-  /** Entries recorded as Blocked. */
+  /** Entries per status — how the topic's work is going. */
+  doneCount: number;
+  inProgressCount: number;
   blockedCount: number;
+  nextCount: number;
 }
 
 /** Every topic with its totals, most recently active first. */
 export async function listTopicStats(db: Db, opts: { includeArchived?: boolean } = {}): Promise<TopicStats[]> {
-  const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null; blocked_count: number }>(
+  const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null; blocked_count: number; done_count: number; in_progress_count: number; next_count: number }>(
     `SELECT t.*,
             COUNT(e.id) AS entry_count,
             COALESCE(SUM(e.duration_minutes), 0) AS total_minutes,
             COUNT(DISTINCT e.day) AS days_active,
             MAX(e.day) AS last_day,
-            COALESCE(SUM(e.type = 'blocked'), 0) AS blocked_count
+            COALESCE(SUM(e.type = 'blocked'), 0) AS blocked_count,
+            COALESCE(SUM(e.type = 'done'), 0) AS done_count,
+            COALESCE(SUM(e.type = 'in_progress'), 0) AS in_progress_count,
+            COALESCE(SUM(e.type = 'next'), 0) AS next_count
      FROM topics t LEFT JOIN entries e ON e.topic_id = t.id
      ${opts.includeArchived ? '' : 'WHERE t.archived = 0'}
      GROUP BY t.id
@@ -134,6 +140,9 @@ export async function listTopicStats(db: Db, opts: { includeArchived?: boolean }
     totalMinutes: r.total_minutes,
     daysActive: r.days_active,
     lastDay: r.last_day,
+    doneCount: r.done_count,
+    inProgressCount: r.in_progress_count,
     blockedCount: r.blocked_count,
+    nextCount: r.next_count,
   }));
 }
