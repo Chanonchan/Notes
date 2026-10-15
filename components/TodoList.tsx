@@ -35,20 +35,25 @@ function sinceLabel(day: string, today: string): string {
 export function TodoList({
   onEdit,
   onChecked,
+  topicId,
 }: {
   onEdit: (entry: Entry) => void;
+  /** Only this topic's jobs (topic page); then nothing is shown when it has none. */
+  topicId?: number;
   /** After a job is closed (Done or Blocked), with its state before — for Undo. */
   onChecked?: (entry: Entry, newType: EntryType) => void;
 }) {
   const t = useTheme();
   const today = todayKey();
-  const { data: items } = useQuery((db) => listOpenItems(db));
+  const { data: all } = useQuery((db) => listOpenItems(db));
+  const items = topicId === undefined ? all : all?.filter((e) => e.topicId === topicId);
   const { byId } = useTopics(true);
   const [target, setTarget] = useState<Entry | null>(null);
   const finish = useMutation((db, id: number) => setStatus(db, id, 'done', today));
 
   if (!items) return null;
   if (!items.length) {
+    if (topicId !== undefined) return null;
     return (
       <View>
         <GroupLabel>To-do</GroupLabel>
@@ -80,7 +85,7 @@ export function TodoList({
                       entry={e}
                       showTime={false}
                       showType={false}
-                      subtitle={[e.topicId != null ? byId.get(e.topicId)?.name : null, sinceLabel(e.day, today)].filter(Boolean).join(' · ')}
+                      subtitle={[topicId === undefined && e.topicId != null ? byId.get(e.topicId)?.name : null, sinceLabel(e.day, today)].filter(Boolean).join(' · ')}
                       onPress={() => setTarget(e)}
                       onTypePress={() => setTarget(e)}
                       onCheck={type === 'in_progress' ? () => done(e) : undefined}

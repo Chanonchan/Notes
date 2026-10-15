@@ -1,24 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Composer } from '../components/Composer';
 import { DayTimeline } from '../components/DayTimeline';
-import { TYPE_ICONS } from '../components/EntryRow';
-import { DurationChips } from '../components/DurationChips';
-import { ListGroup, ListRow, ScreenHeader } from '../components/List';
+import { ScreenHeader } from '../components/List';
 import { TodoList } from '../components/TodoList';
-import { TopicPicker } from '../components/TopicPicker';
-import { TypeSelector } from '../components/TypeSelector';
-import { createEntry, createTopicWithTags, listOpenItems, OPEN_TYPES, setLastTopicId, updateEntry } from '../db';
-import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
-import { useMutation, useQuery } from '../hooks/useDb';
+import { listOpenItems, OPEN_TYPES } from '../db';
+import { useDayEntries } from '../hooks/useData';
+import { useQuery } from '../hooks/useDb';
+import { useUndo } from '../hooks/useUndo';
 import { useReminder } from '../hooks/useHabits';
 import { ReminderCard } from '../components/ReminderCard';
 import { storageStats } from '../services/export';
 import { isInstalledApp } from '../services/export/files';
 import { useTheme } from '../hooks/useTheme';
-import { formatDayLong, formatDuration, formatRelativeDay, todayKey } from '../services/dates';
-import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
+import { formatDayLong, formatDuration, todayKey } from '../services/dates';
 import type { TabScreenProps } from '../types/navigation';
 
 /**
@@ -30,8 +27,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const t = useTheme();
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const { topics } = useTopics();
-  const lastTopicId = useLastTopicId();
   const today = todayKey();
   const { entries } = useDayEntries(today);
   const doneToday = entries.filter((e) => !OPEN_TYPES.includes(e.type));
@@ -41,29 +36,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const showMoveHint = Platform.OS === 'web' && isInstalledApp() && totalEntries === 0;
   const reminder = useReminder();
 
-  const [text, setText] = useState('');
-  const [topicId, setTopicId] = useState<number | null>(null);
-  const [type, setType] = useState<EntryType>('done');
-  const [duration, setDuration] = useState<number | null>(null);
-  const [showOptions, setShowOptions] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(false);
-  // Last ticked-off item, so a mis-tap can be undone.
-  const [undo, setUndo] = useState<{ id: number; type: EntryType; day: string; text: string; newType: EntryType } | null>(null);
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const restoreType = useMutation((db, id: number, prev: EntryType, day: string) => updateEntry(db, id, { type: prev, day }));
-  const offerUndo = (e: Entry, newType: EntryType = 'done') => {
-    if (undoTimer.current) clearTimeout(undoTimer.current);
-    setUndo({ id: e.id, type: e.type, day: e.day, text: e.text, newType });
-    undoTimer.current = setTimeout(() => setUndo(null), 5000);
-  };
-  const topicTouched = useRef(false);
-  const suggestedId = useTopicSuggestion(text);
-
-  // Pre-select the last used topic once it has loaded.
-  useEffect(() => {
-    if (lastTopicId !== undefined && !topicTouched.current) setTopicId(lastTopicId);
-  }, [lastTopicId]);
+  const { undo, offer: offerUndo, run: runUndo } = useUndo();
 
   // Opened from the reminder notification (or anywhere asking for focus).
   useEffect(() => {
@@ -74,38 +47,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
     }
   }, [route.params?.focus, navigation]);
 
-  const add = useMutation(async (db) => {
-    await createEntry(db, { topicId, text, type, durationMinutes: duration });
-    await setLastTopicId(db, topicId);
-  });
-  const addTopic = useMutation((db, name: string, tags: string[]) => createTopicWithTags(db, name, tags));
-
-  const canAdd = text.trim().length > 0 && !saving;
-  const submit = async () => {
-    if (!canAdd) return;
-    setSaving(true);
-    try {
-      await add();
-      setText('');
-      setType('done');
-      setDuration(null);
-      setShowOptions(false);
-      setToast(true);
-      setTimeout(() => setToast(false), 1400);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const pickTopic = (id: number | null) => {
-    topicTouched.current = true;
-    setTopicId(id);
-  };
-
   const totalMinutes = entries.reduce((s, e) => s + (e.durationMinutes ?? 0), 0);
-  const optionsLabel = `${ENTRY_TYPE_LABELS[type]}${duration ? ` · ${formatDuration(duration)}` : ''}`;
-  const optionsChanged = type !== 'done' || duration != null;
 
   return (
     <KeyboardAvoidingView
@@ -176,90 +118,12 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
         ) : null}
       </ScrollView>
 
-      {/* Composer */}
-      <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
-        {undo ? (
-          <View style={[styles.undoBar, { backgroundColor: t.text }]}>
-            <Ionicons name={TYPE_ICONS[undo.newType]} size={20} color={t.types[undo.newType]} />
-            <Text style={{ color: t.bg, fontSize: 15, flex: 1 }} numberOfLines={1}>
-              {ENTRY_TYPE_LABELS[undo.newType]}: {undo.text}
-            </Text>
-            <Pressable
-              onPress={async () => {
-                const u = undo;
-                setUndo(null);
-                if (u) await restoreType(u.id, u.type, u.day);
-              }}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Undo"
-            >
-              <Text style={{ color: t.dark ? t.primary : '#8FB3FF', fontSize: 15, fontWeight: '800' }}>Undo</Text>
-            </Pressable>
-          </View>
-        ) : null}
-        {toast ? (
-          <View style={[styles.toast, { backgroundColor: t.types.done }]} pointerEvents="none">
-            <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-            <Text style={[styles.toastText, { color: '#FFFFFF' }]}>Logged</Text>
-          </View>
-        ) : null}
-
-        <TopicPicker topics={topics} value={topicId} onChange={pickTopic} onCreate={addTopic} suggestedId={suggestedId} />
-
-        {showOptions ? (
-          <View style={styles.options}>
-            <TypeSelector value={type} onChange={setType} />
-            <DurationChips value={duration} onChange={setDuration} />
-          </View>
-        ) : null}
-
-        <View style={styles.inputRow}>
-          <Pressable
-            onPress={() => setShowOptions((v) => !v)}
-            accessibilityRole="button"
-            accessibilityLabel={`Type and time: ${optionsLabel}. Tap to ${showOptions ? 'hide' : 'change'}.`}
-            hitSlop={6}
-            style={[styles.typeBtn, { backgroundColor: t.chip, borderWidth: showOptions ? 1.5 : 0, borderColor: t.primary }]}
-          >
-            <Ionicons name={TYPE_ICONS[type]} size={24} color={t.types[type]} />
-            {duration ? (
-              <View style={[styles.durBadge, { backgroundColor: t.text }]}>
-                <Text style={[styles.durText, { color: t.bg }]}>{formatDuration(duration)}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-
-          <TextInput
-            ref={inputRef}
-            value={text}
-            onChangeText={setText}
-            placeholder="What did you do?"
-            placeholderTextColor={t.muted}
-            multiline
-            numberOfLines={1}
-            submitBehavior="submit"
-            returnKeyType="send"
-            onSubmitEditing={submit}
-            style={[styles.input, { color: t.text, backgroundColor: t.bg, borderColor: t.border }]}
-            accessibilityLabel="Entry text"
-          />
-
-          <Pressable
-            onPress={submit}
-            disabled={!canAdd}
-            accessibilityRole="button"
-            accessibilityLabel="Add entry"
-            hitSlop={6}
-            style={({ pressed }) => [
-              styles.send,
-              { backgroundColor: canAdd ? t.primary : t.chip, opacity: pressed ? 0.8 : 1 },
-            ]}
-          >
-            <Ionicons name="arrow-up" size={26} color={canAdd ? t.onPrimary : t.muted} />
-          </Pressable>
-        </View>
-      </View>
+      <Composer
+        inputRef={inputRef}
+        undo={undo}
+        onUndo={runUndo}
+        onAdded={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -267,9 +131,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 const styles = StyleSheet.create({
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  typeBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  durBadge: { position: 'absolute', bottom: -4, right: -6, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 },
-  durText: { fontSize: 11, fontWeight: '800' },
   banner: { paddingHorizontal: 16, paddingTop: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
   sectionTitle: { fontSize: 20, fontWeight: '800', marginTop: 28, marginBottom: -8, paddingHorizontal: 4 },
@@ -277,48 +138,5 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  undoBar: {
-    position: 'absolute',
-    top: -56,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minHeight: 46,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    zIndex: 11,
-  },
   moveHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, minHeight: 44 },
-  composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
-  options: { gap: 10 },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  input: {
-    flex: 1,
-    minHeight: 48,
-    maxHeight: 120,
-    fontSize: 17,
-    borderWidth: 1,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    lineHeight: 22,
-    textAlignVertical: 'center',
-  },
-  send: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  toast: {
-    position: 'absolute',
-    top: -44,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
-    zIndex: 10,
-  },
-  toastText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 });
