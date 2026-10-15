@@ -45,8 +45,10 @@ export interface Summary {
   topics: TopicSummary[];
   /** Active (non-archived) topics with no entries in the range. */
   untouched: Topic[];
-  /** Next / In progress / Blocked entries in the range not resolved later. */
+  /** In progress / Next entries in the range not resolved later. */
   openItems: OpenItem[];
+  /** Blocked entries in the range, oldest first (their own section). */
+  blocked: OpenItem[];
   /** Which summarizer produced this (e.g. 'rules', 'claude'). */
   source: string;
 }

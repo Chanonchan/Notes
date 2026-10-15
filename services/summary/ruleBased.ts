@@ -1,7 +1,8 @@
 import { ENTRY_TYPES, type Entry, type EntryType, type Topic } from '../../types';
 import type { OpenItem, Summarizer, Summary, SummaryInput, TopicSummary } from './types';
 
-const OPEN_TYPES: EntryType[] = ['next', 'in_progress', 'blocked'];
+/** Still waiting: in progress first, then planned. Blocked is a closed record with its own section. */
+const OPEN_TYPES: EntryType[] = ['in_progress', 'next'];
 
 const emptyByType = <T>(make: () => T) =>
   Object.fromEntries(ENTRY_TYPES.map((t) => [t, make()])) as Record<EntryType, T>;
@@ -43,7 +44,7 @@ function findOpenItems(input: SummaryInput, byId: Map<number, Topic>): OpenItem[
   return sorted
     .filter((e) => OPEN_TYPES.includes(e.type) && !input.continuedIds.has(e.id))
     .filter((e) => latestByKey.get(`${e.topicId ?? ''}|${norm(e.text)}`) === e)
-    .sort((a, b) => OPEN_TYPES.indexOf(b.type) - OPEN_TYPES.indexOf(a.type) || a.createdAt - b.createdAt)
+    .sort((a, b) => OPEN_TYPES.indexOf(a.type) - OPEN_TYPES.indexOf(b.type) || a.createdAt - b.createdAt)
     .map((entry) => ({ entry, topic: entry.topicId != null ? (byId.get(entry.topicId) ?? null) : null }));
 }
 
@@ -80,6 +81,10 @@ export function summarizeWithRules(input: SummaryInput): Summary {
     topics,
     untouched,
     openItems: findOpenItems(input, byId),
+    blocked: input.entries
+      .filter((e) => e.type === 'blocked')
+      .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id)
+      .map((entry) => ({ entry, topic: entry.topicId != null ? (byId.get(entry.topicId) ?? null) : null })),
     source: 'rules',
   };
 }

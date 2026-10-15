@@ -30,7 +30,9 @@ describe('topic stats', () => {
 
     const stats = await listTopicStats(db);
     expect(stats.map((s) => s.topic.name)).toEqual(['Web', 'Idle']);
-    expect(stats[0]).toMatchObject({ entryCount: 3, totalMinutes: 90, daysActive: 2, lastDay: '2026-01-07' });
+    expect(stats[0]).toMatchObject({ entryCount: 3, totalMinutes: 90, daysActive: 2, lastDay: '2026-01-07', blockedCount: 0 });
+    await createEntry(db, { topicId: web.id, text: 'Waiting on keys', day: '2026-01-07', type: 'blocked' });
+    expect((await listTopicStats(db))[0].blockedCount).toBe(1);
     expect(stats.find((s) => s.topic.id === idle.id)).toMatchObject({ entryCount: 0, totalMinutes: 0, daysActive: 0, lastDay: null });
   });
 

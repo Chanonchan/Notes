@@ -3,7 +3,8 @@ import { ENTRY_TYPE_LABELS, type EntryType } from '../../types';
 import { formatRange, rangeLength } from './ranges';
 import type { Summary, TopicSummary } from './types';
 
-const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'blocked', 'next'];
+// Blocked has its own section below, so topic lines leave it out.
+const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'next'];
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -61,13 +62,22 @@ export function formatSummaryText(summary: Summary): string {
     lines.push('', `Not touched: ${summary.untouched.map((t) => t.name).join(', ')}`);
   }
 
+  const where = (entry: { day: string }, topicName?: string) =>
+    [topicName, summary.range.from !== summary.range.to ? weekdayShort(entry.day) : null].filter(Boolean).join(', ');
+
+  if (summary.blocked.length) {
+    lines.push('', 'Blocked:');
+    for (const { entry, topic } of summary.blocked) {
+      const w = where(entry, topic?.name);
+      lines.push(`  • ${entry.text}${w ? ` (${w})` : ''}`);
+    }
+  }
+
   if (summary.openItems.length) {
     lines.push('', 'Still open:');
     for (const { entry, topic } of summary.openItems) {
-      const where = [topic?.name, summary.range.from !== summary.range.to ? weekdayShort(entry.day) : null]
-        .filter(Boolean)
-        .join(', ');
-      lines.push(`  • [${ENTRY_TYPE_LABELS[entry.type]}] ${entry.text}${where ? ` (${where})` : ''}`);
+      const w = where(entry, topic?.name);
+      lines.push(`  • [${ENTRY_TYPE_LABELS[entry.type]}] ${entry.text}${w ? ` (${w})` : ''}`);
     }
   }
 

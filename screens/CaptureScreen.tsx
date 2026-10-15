@@ -36,7 +36,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const lastTopicId = useLastTopicId();
   const today = todayKey();
   const { entries } = useDayEntries(today);
-  const doneToday = entries.filter((e) => e.type === 'done');
+  const doneToday = entries.filter((e) => !OPEN_TYPES.includes(e.type));
   const openCount = useQuery((db) => listOpenItems(db)).data?.length ?? 0;
   // Fresh home-screen install with an empty log: point to the Safari → app move.
   const totalEntries = useQuery((db) => storageStats(db), []).data?.entries;
@@ -52,12 +52,12 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
   // Last ticked-off item, so a mis-tap can be undone.
-  const [undo, setUndo] = useState<{ id: number; type: EntryType; day: string; text: string } | null>(null);
+  const [undo, setUndo] = useState<{ id: number; type: EntryType; day: string; text: string; newType: EntryType } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restoreType = useMutation((db, id: number, prev: EntryType, day: string) => updateEntry(db, id, { type: prev, day }));
-  const offerUndo = (e: Entry) => {
+  const offerUndo = (e: Entry, newType: EntryType = 'done') => {
     if (undoTimer.current) clearTimeout(undoTimer.current);
-    setUndo({ id: e.id, type: e.type, day: e.day, text: e.text });
+    setUndo({ id: e.id, type: e.type, day: e.day, text: e.text, newType });
     undoTimer.current = setTimeout(() => setUndo(null), 5000);
   };
   const topicTouched = useRef(false);
@@ -176,13 +176,13 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
         <TodoList onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} onChecked={offerUndo} />
         {doneToday.length ? (
           <>
-            <Text style={[styles.sectionTitle, { color: t.text }]}>Done today</Text>
+            <Text style={[styles.sectionTitle, { color: t.text }]}>Today's log</Text>
             <DayTimeline
               day={today}
               excludeTypes={OPEN_TYPES}
               emptyText=""
               onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })}
-              onChecked={offerUndo}
+              onChecked={(e) => offerUndo(e)}
             />
           </>
         ) : openCount ? (
@@ -208,9 +208,9 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
       <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
         {undo ? (
           <View style={[styles.undoBar, { backgroundColor: t.text }]}>
-            <Ionicons name="checkmark-circle" size={20} color={t.types.done} />
+            <Ionicons name={TYPE_ICONS[undo.newType]} size={20} color={t.types[undo.newType]} />
             <Text style={{ color: t.bg, fontSize: 15, flex: 1 }} numberOfLines={1}>
-              Done: {undo.text}
+              {ENTRY_TYPE_LABELS[undo.newType]}: {undo.text}
             </Text>
             <Pressable
               onPress={async () => {

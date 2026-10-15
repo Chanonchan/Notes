@@ -38,7 +38,8 @@ const KINDS: { value: RangeKind; label: string }[] = [
   { value: 'month', label: 'Month' },
   { value: 'custom', label: 'Custom' },
 ];
-const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'blocked', 'next'];
+// Blocked items get their own section, so topic cards leave them out.
+const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'next'];
 
 export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const t = useTheme();
@@ -273,6 +274,27 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
       {summary.topics.map((s) => (
         <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} onOpenEntry={onOpenEntry} />
       ))}
+
+      {summary.blocked.length ? (
+        <>
+          <GroupLabel right={`${summary.blocked.length}`}>Blocked</GroupLabel>
+          <ListGroup inset={ENTRY_INSET}>
+            {summary.blocked.map(({ entry, topic }) => (
+              <EntryRow
+                key={entry.id}
+                entry={entry}
+                showTime={false}
+                showType={false}
+                subtitle={[topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+                onPress={() => onOpenEntry(entry.id)}
+                onTypePress={() => onOpenEntry(entry.id)}
+              />
+            ))}
+          </ListGroup>
+        </>
+      ) : null}
 
       {summary.openItems.length ? (
         <>

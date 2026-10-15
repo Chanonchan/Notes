@@ -95,6 +95,27 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
         </Text>
       </View>
 
+      {entries.some((e) => e.type === 'blocked') ? (
+        <View>
+          <GroupLabel right={`${entries.filter((e) => e.type === 'blocked').length}`}>Blocked</GroupLabel>
+          <ListGroup inset={ENTRY_INSET}>
+            {entries
+              .filter((e) => e.type === 'blocked')
+              .map((e) => (
+                <EntryRow
+                  key={e.id}
+                  entry={e}
+                  showTime={false}
+                  showType={false}
+                  subtitle={formatRelativeDay(e.day)}
+                  onPress={() => navigation.navigate('EntryEdit', { entryId: e.id })}
+                  onTypePress={() => actions.open(e)}
+                />
+              ))}
+          </ListGroup>
+        </View>
+      ) : null}
+
       {!entries.length ? <Text style={[styles.empty, { color: t.muted }]}>No entries in this topic yet.</Text> : null}
       {[...byDay].map(([day, list]) => (
         <View key={day}>

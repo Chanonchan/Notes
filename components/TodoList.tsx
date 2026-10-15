@@ -15,7 +15,6 @@ import { Button } from './ui';
 
 const SECTIONS: { type: EntryType; label: string }[] = [
   { type: 'in_progress', label: 'In progress' },
-  { type: 'blocked', label: 'Blocked' },
   { type: 'next', label: 'Planned' },
 ];
 
@@ -30,15 +29,16 @@ function sinceLabel(day: string, today: string): string {
 
 /**
  * Today's to-do list: every open job from any day. In progress has a
- * checkbox; planned and blocked jobs have an Update button. Nothing expires.
+ * checkbox; planned jobs have an Update button. Nothing expires. Done and
+ * Blocked close a job (it moves to that day's log).
  */
 export function TodoList({
   onEdit,
   onChecked,
 }: {
   onEdit: (entry: Entry) => void;
-  /** After a job is finished (for Undo). */
-  onChecked?: (entry: Entry) => void;
+  /** After a job is closed (Done or Blocked), with its state before — for Undo. */
+  onChecked?: (entry: Entry, newType: EntryType) => void;
 }) {
   const t = useTheme();
   const today = todayKey();
@@ -53,7 +53,7 @@ export function TodoList({
       <View>
         <GroupLabel>To-do</GroupLabel>
         <Text style={[styles.empty, { color: t.muted }]}>
-          Nothing open. Log work as In progress or Next and it stays here until it's done.
+          Nothing open. Log work as In progress or Next and it stays here until it's done or blocked.
         </Text>
       </View>
     );
@@ -61,7 +61,7 @@ export function TodoList({
 
   const done = async (e: Entry) => {
     await finish(e.id);
-    onChecked?.(e);
+    onChecked?.(e, 'done');
   };
 
   return (
@@ -111,9 +111,9 @@ export function TodoList({
           setTarget(null);
           onEdit(e);
         }}
-        onFinished={(e) => {
+        onFinished={(e, type) => {
           setTarget(null);
-          onChecked?.(e);
+          onChecked?.(e, type);
         }}
       />
     </View>
@@ -130,7 +130,7 @@ function UpdateSheet({
   job: Entry | null;
   onClose: () => void;
   onEdit: (e: Entry) => void;
-  onFinished: (e: Entry) => void;
+  onFinished: (e: Entry, type: EntryType) => void;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -153,7 +153,7 @@ function UpdateSheet({
   );
   const move = (type: EntryType) => async () => {
     await status(job.id, type);
-    if (type === 'done') onFinished(job);
+    if (type === 'done' || type === 'blocked') onFinished(job, type);
     else close();
   };
 
@@ -198,10 +198,9 @@ function UpdateSheet({
         ) : (
           <ListGroup>
             {job.type === 'next' ? action('play-circle', 'Start now', move('in_progress'), t.types.in_progress) : null}
-            {job.type === 'blocked' ? action('play-circle', 'Unblock (back to in progress)', move('in_progress'), t.types.in_progress) : null}
             {action('checkmark-circle', 'Mark done', move('done'), t.types.done)}
             {action('chatbox-ellipses-outline', 'Add progress note', () => setWriting(true))}
-            {job.type !== 'blocked' ? action('alert-circle', 'Blocked', move('blocked'), t.types.blocked) : null}
+            {action('alert-circle', 'Blocked (close it as blocked)', move('blocked'), t.types.blocked)}
             {job.type === 'in_progress' ? action('arrow-undo', 'Back to planned', move('next'), t.types.next) : null}
             {action('create-outline', 'Edit…', () => onEdit(job))}
             {action('trash-outline', 'Delete', () =>

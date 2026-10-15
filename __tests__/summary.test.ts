@@ -100,13 +100,13 @@ describe('rule-based summary', () => {
     expect(s.untouched[0].id).toBe(infra.id);
   });
 
-  it('lists open items, most urgent first', async () => {
+  it('lists open items (in progress, then planned) and blocked separately', async () => {
     const s = await buildSummary(db, WEEK);
     expect(s.openItems.map((o) => [o.entry.type, o.entry.text])).toEqual([
-      ['blocked', 'API keys from vendor'],
       ['in_progress', 'Footer'],
       ['next', 'Send offer'],
     ]);
+    expect(s.blocked.map((o) => [o.entry.text, o.topic?.name])).toEqual([['API keys from vendor', 'Website redesign']]);
   });
 
   it('drops open items later marked Done with the same text, or carried over', async () => {
@@ -130,7 +130,6 @@ describe('rule-based summary', () => {
         'Website redesign: 4 entries over 2 days (Mon, Wed), 3h 30m',
         '  • Done (2): Hero layout; Navbar fixes',
         '  • In progress: Footer',
-        '  • Blocked: API keys from vendor',
         '',
         'Hiring: 2 entries over 1 day (Tue), 1h',
         '  • Done: Interview candidate',
@@ -141,8 +140,10 @@ describe('rule-based summary', () => {
         '',
         'Not touched: Infra',
         '',
+        'Blocked:',
+        '  • API keys from vendor (Website redesign, Wed)',
+        '',
         'Still open:',
-        '  • [Blocked] API keys from vendor (Website redesign, Wed)',
         '  • [In progress] Footer (Website redesign, Wed)',
         '  • [Next] Send offer (Hiring, Tue)',
       ].join('\n'),
