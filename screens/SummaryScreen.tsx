@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateRangeModal } from '../components/DateRangeModal';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -8,7 +10,8 @@ import { TimeBarChart } from '../components/TimeBarChart';
 import { ENTRY_INSET, EntryRow, TypeIcon } from '../components/EntryRow';
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
 import { Button, Chip } from '../components/ui';
-import { useQuery } from '../hooks/useDb';
+import { getSetting, setSetting } from '../db';
+import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, todayKey, weekdayShort } from '../services/dates';
 import { showError } from '../services/dialogs';
@@ -46,7 +49,23 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const { data: summary } = useQuery((db) => buildSummary(db, range), [range.kind, range.from, range.to]);
-  const text = summary ? formatSummaryText(summary) : '';
+  const generated = summary ? formatSummaryText(summary) : '';
+  // A hand-edited version of this period's text, if any (saved on the phone).
+  const draftKey = `summary_draft:${range.kind}:${range.from}:${range.to}` as const;
+  const { data: draftRaw } = useQuery((db) => getSetting(db, draftKey), [draftKey]);
+  const draft = useMemo(() => {
+    try {
+      return draftRaw ? (JSON.parse(draftRaw) as { text: string; base: string }) : null;
+    } catch {
+      return null;
+    }
+  }, [draftRaw]);
+  const text = draft?.text ?? generated;
+  const staleDraft = !!draft && draft.base !== generated;
+  const saveDraft = useMutation((db, value: string | null) => setSetting(db, draftKey, value));
+  const [editing, setEditing] = useState(false);
+  const insets = useSafeAreaInsets();
+  const [editText, setEditText] = useState('');
 
   const setKind = (kind: RangeKind) => {
     if (kind === 'custom') {
@@ -122,6 +141,19 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
             <GroupLabel>Copy & share</GroupLabel>
             <ListGroup>
               <ListRow
+                icon="create-outline"
+                title={draft ? 'Edit summary text · edited' : 'Edit summary text'}
+                subtitle={
+                  staleDraft
+                    ? 'Your log changed after you edited. Open to reset if you want the new version.'
+                    : 'Change wording or add notes before you copy or share'
+                }
+                onPress={() => {
+                  setEditText(text);
+                  setEditing(true);
+                }}
+              />
+              <ListRow
                 icon="document-text-outline"
                 title={showText ? 'Hide text preview' : 'Preview text'}
                 subtitle="Exactly what Copy and Share will send"
@@ -151,6 +183,48 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
         <Button label="Copy as text" onPress={copy} disabled={!summary} style={{ flex: 1 }} />
         <Button label="Share" kind="secondary" onPress={share} disabled={!summary} style={{ flex: 1 }} />
       </View>
+
+      <Modal visible={editing} animationType="slide" onRequestClose={() => setEditing(false)}>
+        <View style={[styles.editor, { backgroundColor: t.bg, paddingTop: insets.top + 4, paddingBottom: insets.bottom }]}>
+          <View style={[styles.editorBar, { borderBottomColor: t.border }]}>
+            <Pressable
+              onPress={() => {
+                setEditText(generated);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Reset to original"
+            >
+              <Text style={{ color: t.danger, fontSize: 16, fontWeight: '600' }}>Reset</Text>
+            </Pressable>
+            <Text style={[styles.editorTitle, { color: t.text }]}>Edit summary</Text>
+            <Pressable
+              onPress={async () => {
+                // Matching the generated text again means "not edited".
+                await saveDraft(editText === generated ? null : JSON.stringify({ text: editText, base: generated }));
+                setEditing(false);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Save summary"
+            >
+              <Text style={{ color: t.primary, fontSize: 16, fontWeight: '800' }}>Done</Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.editorHint, { color: t.muted }]}>
+            {formatRange(range)} · Copy and Share will use this text. Your entries are not changed.
+          </Text>
+          <TextInput
+            value={editText}
+            onChangeText={setEditText}
+            multiline
+            autoFocus
+            autoCorrect
+            style={[styles.editorInput, { color: t.text, backgroundColor: t.card, borderColor: t.border }]}
+            accessibilityLabel="Summary text"
+          />
+        </View>
+      </Modal>
 
       <DateRangeModal
         visible={picking}
@@ -197,7 +271,7 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
       ) : null}
 
       {summary.topics.map((s) => (
-        <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} />
+        <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} onOpenEntry={onOpenEntry} />
       ))}
 
       {summary.openItems.length ? (
@@ -230,7 +304,7 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
   );
 }
 
-function TopicSummaryCard({ s, summary }: { s: TopicSummary; summary: Summary }) {
+function TopicSummaryCard({ s, summary, onOpenEntry }: { s: TopicSummary; summary: Summary; onOpenEntry: (id: number) => void }) {
   const t = useTheme();
   const line = formatTopicLine(s, summary);
   const detail = line.slice(line.indexOf(': ') + 2).replace(/, \d+h( \d+m)?$|, \d+m$/, '');
@@ -246,10 +320,16 @@ function TopicSummaryCard({ s, summary }: { s: TopicSummary; summary: Summary })
         <Text style={{ color: t.muted, fontSize: 14, marginBottom: 6 }}>{detail}</Text>
         {TYPE_ORDER.flatMap((type) =>
           s.items[type].map((item, i) => (
-            <View key={`${type}-${i}`} style={styles.item}>
+            <Pressable
+              key={`${type}-${i}`}
+              onPress={() => onOpenEntry(s.itemIds[type][i])}
+              accessibilityRole="button"
+              accessibilityHint="Opens the entry to edit it"
+              style={({ pressed }) => [styles.item, { backgroundColor: pressed ? t.chip : 'transparent' }]}
+            >
               <TypeIcon type={type} size={18} />
               <Text style={{ color: t.text, fontSize: 15, lineHeight: 21, flex: 1 }}>{item}</Text>
-            </View>
+            </Pressable>
           )),
         )}
       </View>
@@ -271,6 +351,11 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 3 },
   untouched: { fontSize: 15, lineHeight: 22, paddingHorizontal: 4 },
   previewBox: { padding: 14 },
+  editor: { flex: 1 },
+  editorBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  editorTitle: { fontSize: 17, fontWeight: '700' },
+  editorHint: { fontSize: 13, paddingHorizontal: 16, paddingTop: 10 },
+  editorInput: { flex: 1, margin: 16, borderWidth: 1, borderRadius: 14, padding: 14, fontSize: 15, lineHeight: 22, textAlignVertical: 'top' },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   rangeLabel: { flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   rangeText: { fontSize: 16, fontWeight: '700', textAlign: 'center' },

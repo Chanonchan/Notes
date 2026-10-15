@@ -88,6 +88,10 @@ describe('rule-based summary', () => {
     expect(w.totalMinutes).toBe(210);
     expect(w.counts).toEqual({ done: 2, in_progress: 1, blocked: 1, next: 0 });
     expect(w.items.done).toEqual(['Hero layout', 'Navbar fixes']);
+    // Each item links back to its entry (for tap-to-edit).
+    const ids = w.itemIds.done;
+    expect(ids).toHaveLength(2);
+    expect((await db.get<{ text: string }>('SELECT text FROM entries WHERE id = ?', [ids[1]]))?.text).toBe('Navbar fixes');
   });
 
   it('lists active topics not touched in the range, excluding archived ones', async () => {

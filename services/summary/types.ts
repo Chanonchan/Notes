@@ -29,6 +29,8 @@ export interface TopicSummary {
   counts: Record<EntryType, number>;
   /** Entry texts per type, in chronological order, de-duplicated. */
   items: Record<EntryType, string[]>;
+  /** Entry id behind each item (same order as `items`), for opening it to edit. */
+  itemIds: Record<EntryType, number[]>;
 }
 
 export interface OpenItem {

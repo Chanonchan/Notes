@@ -11,6 +11,7 @@ const norm = (text: string) => text.trim().toLowerCase().replace(/\s+/g, ' ');
 function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
   const counts = emptyByType(() => 0);
   const items = emptyByType<string[]>(() => []);
+  const itemIds = emptyByType<number[]>(() => []);
   const seen = emptyByType(() => new Set<string>());
   const days = new Set<string>();
   let totalMinutes = 0;
@@ -23,9 +24,10 @@ function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
     if (!seen[e.type].has(key)) {
       seen[e.type].add(key);
       items[e.type].push(e.text);
+      itemIds[e.type].push(e.id);
     }
   }
-  return { topic, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items };
+  return { topic, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds };
 }
 
 /**

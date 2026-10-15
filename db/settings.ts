@@ -6,7 +6,9 @@ export type SettingKey =
   | 'workdays'
   | 'last_carryover_day'
   | 'carryover_dismissed_day'
-  | 'appearance';
+  | 'appearance'
+  /** Hand-edited summary text, per period: summary_draft:<kind>:<from>:<to> */
+  | `summary_draft:${string}`;
 
 export async function getSetting(db: Db, key: SettingKey): Promise<string | null> {
   const row = await db.get<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
