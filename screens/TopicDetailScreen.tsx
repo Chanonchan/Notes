@@ -36,7 +36,8 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
   const [menuOpen, setMenuOpen] = useState(false);
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: topic?.name ?? 'Topic',
+      // The full name is a wrapping heading in the page; the bar title would cut it off.
+      title: '',
       headerRight: () => (
         <Pressable onPress={() => setMenuOpen(true)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Topic actions" style={{ paddingHorizontal: 8 }}>
           <Ionicons name="ellipsis-horizontal" size={24} color={t.primary} />
@@ -88,6 +89,11 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
             </Pressable>
           </View>
         </ListGroup>
+      ) : null}
+      {!renaming ? (
+        <Text style={[styles.heading, { color: t.text }]} accessibilityRole="header">
+          {topic.name}
+        </Text>
       ) : null}
       <View style={styles.statsRow}>
         <Text style={{ color: t.muted, fontSize: 15, flex: 1 }}>
@@ -229,6 +235,7 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
+  heading: { fontSize: 28, fontWeight: '800', lineHeight: 34, paddingHorizontal: 4 },
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginTop: 4 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   nameInput: { flex: 1, fontSize: 17, borderWidth: 2, borderRadius: 10, paddingHorizontal: 10, minHeight: 44 },

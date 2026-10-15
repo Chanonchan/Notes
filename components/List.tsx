@@ -96,6 +96,7 @@ export function ListRow({
   title,
   titleLines,
   subtitle,
+  below,
   value,
   right,
   onPress,
@@ -114,6 +115,8 @@ export function ListRow({
   /** Max title lines; unlimited by default so entry text is never cut. */
   titleLines?: number;
   subtitle?: string;
+  /** Extra content under the subtitle (e.g. a status badge). */
+  below?: ReactNode;
   /** Short muted text on the right (e.g. the current setting). */
   value?: string;
   right?: ReactNode;
@@ -147,6 +150,7 @@ export function ListRow({
             {subtitle}
           </Text>
         ) : null}
+        {below}
       </View>
       {value ? (
         <Text style={[styles.value, { color: t.muted }]} numberOfLines={1}>

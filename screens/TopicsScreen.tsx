@@ -31,9 +31,8 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
       key={s.topic.id}
       icon="pricetag-outline"
       title={s.topic.name}
-      titleLines={1}
       subtitle={topicSubtitle(s)}
-      right={<TopicStatusBadge stats={s} />}
+      below={<TopicStatusBadge stats={s} style={{ marginTop: 6 }} />}
       onPress={() => navigation.navigate('TopicDetail', { topicId: s.topic.id })}
     />
   );
