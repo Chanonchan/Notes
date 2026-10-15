@@ -7,6 +7,7 @@ import {
   getTopic,
   listEntriesByTopic,
   listTopicStats,
+  topicStatus,
   listTopics,
   mergeTopics,
   renameTopic,
@@ -36,6 +37,15 @@ describe('topic stats', () => {
     await createEntry(db, { topicId: web.id, text: 'Launch', day: '2026-01-07', type: 'next' });
     expect((await listTopicStats(db))[0]).toMatchObject({ doneCount: 3, inProgressCount: 1, blockedCount: 1, nextCount: 1 });
     expect(stats.find((s) => s.topic.id === idle.id)).toMatchObject({ entryCount: 0, totalMinutes: 0, daysActive: 0, lastDay: null });
+  });
+
+  it('gives a topic one status: blocked > working > done', () => {
+    const base = { entryCount: 3, blockedCount: 0, inProgressCount: 0, nextCount: 0 };
+    expect(topicStatus({ ...base, entryCount: 0 })).toBeNull();
+    expect(topicStatus(base)).toBe('done');
+    expect(topicStatus({ ...base, nextCount: 1 })).toBe('working');
+    expect(topicStatus({ ...base, inProgressCount: 1 })).toBe('working');
+    expect(topicStatus({ ...base, inProgressCount: 1, blockedCount: 1 })).toBe('blocked');
   });
 
   it('hides archived topics unless asked', async () => {

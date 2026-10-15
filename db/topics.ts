@@ -118,6 +118,20 @@ export interface TopicStats {
 }
 
 /** Every topic with its totals, most recently active first. */
+export type TopicStatus = 'done' | 'working' | 'blocked';
+
+/**
+ * One status for the whole topic: Blocked if anything in it is blocked,
+ * else Working if anything is in progress or planned, else Done.
+ * Null for a topic with no entries.
+ */
+export function topicStatus(s: Pick<TopicStats, 'entryCount' | 'blockedCount' | 'inProgressCount' | 'nextCount'>): TopicStatus | null {
+  if (!s.entryCount) return null;
+  if (s.blockedCount) return 'blocked';
+  if (s.inProgressCount || s.nextCount) return 'working';
+  return 'done';
+}
+
 export async function listTopicStats(db: Db, opts: { includeArchived?: boolean } = {}): Promise<TopicStats[]> {
   const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null; blocked_count: number; done_count: number; in_progress_count: number; next_count: number }>(
     `SELECT t.*,
