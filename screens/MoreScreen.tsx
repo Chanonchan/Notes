@@ -59,7 +59,7 @@ export function MoreScreen({ navigation }: TabScreenProps<'More'>) {
             value={reminderTime === REMINDER_OFF ? 'Off' : reminderTime}
             onPress={() => setSheet('reminder')}
           />
-          <ListRow icon="calendar-outline" title="Workdays" subtitle="Used for the streak and the reminder" value={formatWorkdays(workdays)} onPress={() => setSheet('workdays')} />
+          <ListRow icon="calendar-outline" title="Workdays" subtitle="Days the reminder shows" value={formatWorkdays(workdays)} onPress={() => setSheet('workdays')} />
           <ListRow
             icon="contrast-outline"
             title="Appearance"

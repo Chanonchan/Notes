@@ -12,16 +12,13 @@ import { TypeSelector } from '../components/TypeSelector';
 import { createEntry, createTopic, listOpenItems, OPEN_TYPES, setLastTopicId, updateEntry } from '../db';
 import { useDayEntries, useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
-import { useReminder, useStreak } from '../hooks/useHabits';
+import { useReminder } from '../hooks/useHabits';
 import { storageStats } from '../services/export';
 import { isInstalledApp } from '../services/export/files';
 import { useTheme } from '../hooks/useTheme';
 import { formatDayLong, formatDuration, formatRelativeDay, todayKey } from '../services/dates';
 import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
 import type { TabScreenProps } from '../types/navigation';
-
-/** The one warm accent: the streak flame. */
-const STREAK_COLOR = '#F08C00';
 
 /**
  * Home screen. Today's log fills the screen; the composer is pinned to the
@@ -41,7 +38,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
   // Fresh home-screen install with an empty log: point to the Safari → app move.
   const totalEntries = useQuery((db) => storageStats(db), []).data?.entries;
   const showMoveHint = Platform.OS === 'web' && isInstalledApp() && totalEntries === 0;
-  const streak = useStreak();
   const reminder = useReminder(entries);
 
   const [text, setText] = useState('');
@@ -126,18 +122,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
           .join(' · ')}
         right={
           <View style={styles.headerRight}>
-            {streak && streak.current > 0 ? (
-              <Pressable
-                onPress={() => navigation.navigate('Tabs', { screen: 'More' })}
-                accessibilityRole="button"
-                accessibilityLabel={`${streak.current}-workday streak${streak.atRisk ? ', log something today to keep it' : ''}`}
-                hitSlop={8}
-                style={[styles.streak, { backgroundColor: t.card, borderColor: streak.atRisk ? STREAK_COLOR : t.border }]}
-              >
-                <Ionicons name={streak.loggedToday ? 'flame' : 'flame-outline'} size={18} color={STREAK_COLOR} />
-                <Text style={{ color: t.text, fontSize: 16, fontWeight: '800' }}>{streak.current}</Text>
-              </Pressable>
-            ) : null}
             <Pressable onPress={() => navigation.navigate('Search')} accessibilityRole="button" accessibilityLabel="Search" hitSlop={10} style={styles.iconBtn}>
               <Ionicons name="search" size={24} color={t.text} />
             </Pressable>
@@ -151,7 +135,7 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
             <ListRow
               icon="notifications"
               title="Anything you forgot to log today?"
-              subtitle={streak?.atRisk ? `Log one thing to keep your ${streak.current}-day streak` : 'Tap to add it now'}
+              subtitle="Tap to add it now"
               onPress={() => inputRef.current?.focus()}
               chevron={false}
               right={
@@ -295,7 +279,6 @@ export function CaptureScreen({ navigation, route }: TabScreenProps<'Log'>) {
 const styles = StyleSheet.create({
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  streak: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1 },
   typeBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   durBadge: { position: 'absolute', bottom: -4, right: -6, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 },
   durText: { fontSize: 11, fontWeight: '800' },

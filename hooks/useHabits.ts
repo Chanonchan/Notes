@@ -1,21 +1,14 @@
 import { useEffect, useState } from 'react';
 
-import { getSetting, listLoggedDays, setSetting } from '../db';
+import { getSetting, setSetting } from '../db';
 import { todayKey } from '../services/dates';
 import { DEFAULT_REMINDER_TIME, shouldShowReminder } from '../services/reminder';
-import { computeStreak, parseWorkdays } from '../services/streak';
+import { parseWorkdays } from '../services/workdays';
 import type { Entry } from '../types';
 import { useMutation, useQuery } from './useDb';
 
 export function useWorkdays() {
   return parseWorkdays(useQuery((db) => getSetting(db, 'workdays')).data ?? null);
-}
-
-export function useStreak() {
-  const workdays = useWorkdays();
-  const today = todayKey();
-  const { data: days } = useQuery((db) => listLoggedDays(db));
-  return days ? computeStreak(days, today, workdays) : null;
 }
 
 export function useReminderTime(): string {
