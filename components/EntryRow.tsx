@@ -90,13 +90,14 @@ export function EntryRow({
         <TypeIcon type={entry.type} />
       </Pressable>
       <View style={styles.body}>
-        <Text style={[styles.text, { color: t.text }]}>{entry.text}</Text>
+        <Text style={[styles.text, { color: t.text }, entry.starred && styles.starredText]}>{entry.text}</Text>
         {meta.length ? (
           <Text style={[styles.meta, { color: t.muted }]} numberOfLines={1}>
             {meta.join(' · ')}
           </Text>
         ) : null}
       </View>
+      {entry.starred ? <Ionicons name="star" size={16} color={t.star} style={styles.star} accessibilityLabel="Starred" /> : null}
       {onCheck ? (
         <Pressable
           onPress={onCheck}
@@ -120,4 +121,6 @@ const styles = StyleSheet.create({
   text: { fontSize: 16, lineHeight: 22 },
   meta: { fontSize: 13 },
   check: { paddingLeft: 4, alignSelf: 'center' },
+  star: { paddingTop: 3 },
+  starredText: { fontWeight: '700' },
 });

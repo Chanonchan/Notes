@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Composer, UndoBar } from '../components/Composer';
 import { ENTRY_INSET, EntryRow } from '../components/EntryRow';
 import { GroupLabel, IconTile, ListGroup, ListRow } from '../components/List';
-import { TopicStatusBadge } from '../components/TopicStatusBadge';
+import { TopicIcon } from '../components/TopicIcon';
 import { TodoList } from '../components/TodoList';
 import { TagChips, TagEditor, withDraft } from '../components/TopicTags';
 import { Button, Chip } from '../components/ui';
@@ -106,16 +106,18 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
           </ListGroup>
         ) : null}
         {!renaming ? (
-          <Text style={[styles.heading, { color: t.text }]} accessibilityRole="header">
-            {topic.name}
-          </Text>
+          <View style={styles.headingRow}>
+            <TopicIcon stats={stats} size={44} />
+            <Text style={[styles.heading, { color: t.text }]} accessibilityRole="header">
+              {topic.name}
+            </Text>
+          </View>
         ) : null}
         <View style={styles.statsRow}>
           <Text style={{ color: t.muted, fontSize: 15, flex: 1 }}>
             {topicSubtitle(stats)}
             {topic.archived ? ' · archived' : ''}
           </Text>
-          <TopicStatusBadge stats={stats} />
         </View>
 
         {editingTags ? (
@@ -153,6 +155,26 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
             <Text style={{ color: t.primary, fontSize: 14, fontWeight: '700' }}>{stats.tags.length ? 'Edit tags' : '+ Add tags'}</Text>
           </Pressable>
         )}
+
+        {entries.some((e) => e.starred) ? (
+          <View>
+            <GroupLabel right={`${entries.filter((e) => e.starred).length}`}>★ Starred</GroupLabel>
+            <ListGroup inset={ENTRY_INSET}>
+              {entries
+                .filter((e) => e.starred)
+                .map((e) => (
+                  <EntryRow
+                    key={e.id}
+                    entry={e}
+                    showTime={false}
+                    subtitle={formatRelativeDay(e.day)}
+                    onPress={() => navigation.navigate('EntryEdit', { entryId: e.id })}
+                    onTypePress={() => actions.open(e)}
+                  />
+                ))}
+            </ListGroup>
+          </View>
+        ) : null}
 
         <TodoList topicId={topicId} onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} onChecked={offerUndo} />
 
@@ -355,7 +377,8 @@ const styles = StyleSheet.create({
   composeTitle: { flex: 1, fontSize: 18, fontWeight: '800' },
   gone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
-  heading: { fontSize: 28, fontWeight: '800', lineHeight: 34, paddingHorizontal: 4 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
+  heading: { flex: 1, fontSize: 28, fontWeight: '800', lineHeight: 34 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginTop: 10 },
   tagsEdit: { marginTop: 12, gap: 10 },
   tagsActions: { flexDirection: 'row', gap: 10 },

@@ -13,6 +13,7 @@ interface EntryRow {
   created_at: number;
   updated_at: number;
   carried_from_id: number | null;
+  starred: number;
 }
 
 const toEntry = (r: EntryRow, tags: string[] = []): Entry => ({
@@ -26,6 +27,7 @@ const toEntry = (r: EntryRow, tags: string[] = []): Entry => ({
   updatedAt: r.updated_at,
   carriedFromId: r.carried_from_id,
   tags,
+  starred: r.starred === 1,
 });
 
 async function withTags(db: Db, rows: EntryRow[]): Promise<Entry[]> {
@@ -53,8 +55,8 @@ export async function createEntry(db: Db, input: NewEntry): Promise<Entry> {
 
   await db.transaction(async () => {
     const res = await db.run(
-      `INSERT INTO entries (topic_id, text, type, duration_minutes, day, created_at, updated_at, carried_from_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO entries (topic_id, text, type, duration_minutes, day, created_at, updated_at, carried_from_id, starred)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.topicId,
         input.text.trim(),
@@ -64,6 +66,7 @@ export async function createEntry(db: Db, input: NewEntry): Promise<Entry> {
         createdAt,
         now,
         input.carriedFromId ?? null,
+        input.starred ? 1 : 0,
       ],
     );
     id = res.lastInsertRowId;
@@ -94,6 +97,7 @@ export async function updateEntry(db: Db, id: number, patch: EntryPatch): Promis
   if (patch.topicId !== undefined) set('topic_id', patch.topicId);
   if (patch.text !== undefined) set('text', patch.text.trim());
   if (patch.type !== undefined) set('type', patch.type);
+  if (patch.starred !== undefined) set('starred', patch.starred ? 1 : 0);
   if (patch.durationMinutes !== undefined) {
     set('duration_minutes', patch.durationMinutes == null ? null : Math.round(patch.durationMinutes));
   }

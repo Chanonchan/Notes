@@ -13,7 +13,8 @@ function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
   const counts = emptyByType(() => 0);
   const items = emptyByType<string[]>(() => []);
   const itemIds = emptyByType<number[]>(() => []);
-  const seen = emptyByType(() => new Set<string>());
+  const seen = emptyByType(() => new Map<string, number>());
+  const starred = new Set<number>();
   const days = new Set<string>();
   let totalMinutes = 0;
 
@@ -23,12 +24,14 @@ function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
     totalMinutes += e.durationMinutes ?? 0;
     const key = norm(e.text);
     if (!seen[e.type].has(key)) {
-      seen[e.type].add(key);
+      seen[e.type].set(key, e.id);
       items[e.type].push(e.text);
       itemIds[e.type].push(e.id);
     }
+    // A starred repeat stars the item it was merged into.
+    if (e.starred) starred.add(seen[e.type].get(key)!);
   }
-  return { topic, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds };
+  return { topic, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds, starredIds: [...starred] };
 }
 
 /**

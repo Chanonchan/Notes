@@ -42,6 +42,8 @@ export interface Entry {
   updatedAt: number;
   carriedFromId: number | null;
   tags: string[];
+  /** Starred: important to its project; highlighted on the topic page and in summaries. */
+  starred: boolean;
 }
 
 export interface NewEntry {
@@ -54,8 +56,9 @@ export interface NewEntry {
   createdAt?: number;
   carriedFromId?: number | null;
   tags?: string[];
+  starred?: boolean;
 }
 
 export type EntryPatch = Partial<
-  Pick<Entry, 'topicId' | 'text' | 'type' | 'durationMinutes' | 'day' | 'tags'>
+  Pick<Entry, 'topicId' | 'text' | 'type' | 'durationMinutes' | 'day' | 'tags' | 'starred'>
 >;

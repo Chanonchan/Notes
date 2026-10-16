@@ -12,11 +12,16 @@ export function TypeMenu({
   onSelect,
   onDelete,
   onClose,
+  starred,
+  onToggleStar,
 }: {
   visible: boolean;
   current?: EntryType;
   onSelect: (t: EntryType) => void;
   onDelete?: () => void;
+  starred?: boolean;
+  /** Shows a Star / Remove star item. */
+  onToggleStar?: () => void;
   onClose: () => void;
 }) {
   const t = useTheme();
@@ -39,6 +44,16 @@ export function TypeMenu({
               </Text>
             </Pressable>
           ))}
+          {onToggleStar ? (
+            <Pressable
+              onPress={onToggleStar}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.item, { backgroundColor: pressed ? t.chip : 'transparent' }]}
+            >
+              <Ionicons name={starred ? 'star-outline' : 'star'} size={22} color={t.star} />
+              <Text style={[styles.label, { color: t.text }]}>{starred ? 'Remove star' : 'Star as important'}</Text>
+            </Pressable>
+          ) : null}
           {onDelete ? (
             <Pressable onPress={onDelete} accessibilityRole="button" style={styles.item}>
               <Text style={[styles.label, { color: t.danger }]}>Delete entry</Text>

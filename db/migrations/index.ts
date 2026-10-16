@@ -2,6 +2,7 @@ import type { Db } from '../client';
 import { m001Init } from './001_init';
 import { m002TopicTags } from './002_topic_tags';
 import { m003OnHold } from './003_on_hold';
+import { m004Starred } from './004_starred';
 
 export interface Migration {
   version: number;
@@ -10,7 +11,7 @@ export interface Migration {
 }
 
 /** Append new migrations here. Never edit one that has shipped. */
-export const MIGRATIONS: Migration[] = [m001Init, m002TopicTags, m003OnHold];
+export const MIGRATIONS: Migration[] = [m001Init, m002TopicTags, m003OnHold, m004Starred];
 
 export const LATEST_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
 

@@ -53,7 +53,8 @@ export function formatSummaryText(summary: Summary): string {
         const items = t.items[type];
         if (!items.length) continue;
         const label = ENTRY_TYPE_LABELS[type];
-        lines.push(`  • ${label}${t.counts[type] > 1 ? ` (${t.counts[type]})` : ''}: ${items.join('; ')}`);
+        const texts = items.map((text, i) => (t.starredIds.includes(t.itemIds[type][i]) ? `★ ${text}` : text));
+        lines.push(`  • ${label}${t.counts[type] > 1 ? ` (${t.counts[type]})` : ''}: ${texts.join('; ')}`);
       }
     }
   }

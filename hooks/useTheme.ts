@@ -25,6 +25,8 @@ const light = {
   sheet: '#F5F6F8',
   sheetEdge: 'transparent',
   danger: '#D93A2B',
+  /** Star: an entry that matters to its project. */
+  star: '#E8590C',
   types: { done: '#22A06B', in_progress: '#2F6FEB', blocked: '#D93A2B', next: '#8A919E', on_hold: '#B07800' } as Record<EntryType, string>,
 };
 
@@ -45,6 +47,7 @@ const dark: typeof light = {
   sheet: '#111113',
   sheetEdge: '#48484A',
   danger: '#FF6B5E',
+  star: '#FF922B',
   types: { done: '#34C77B', in_progress: '#4D94FF', blocked: '#FF6B5E', next: '#9D9DA5', on_hold: '#FFC53D' },
 };
 

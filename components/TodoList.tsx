@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { addProgressNote, deleteEntry, listOpenItems, setStatus } from '../db';
+import { addProgressNote, deleteEntry, listOpenItems, setStatus, updateEntry } from '../db';
 import { useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
@@ -145,6 +145,7 @@ function UpdateSheet({
   const status = useMutation((db, id: number, type: EntryType) => setStatus(db, id, type, today));
   const progress = useMutation((db, e: Entry, text: string) => addProgressNote(db, e, text, today));
   const remove = useMutation((db, id: number) => deleteEntry(db, id));
+  const star = useMutation((db, id: number, starred: boolean) => updateEntry(db, id, { starred }));
 
   const close = () => {
     setNote('');
@@ -208,6 +209,10 @@ function UpdateSheet({
             {action('chatbox-ellipses-outline', 'Add progress note', () => setWriting(true))}
             {action('alert-circle', 'Blocked (close it as blocked)', move('blocked'), t.types.blocked)}
             {job.type === 'in_progress' ? action('arrow-undo', 'Back to planned', move('next'), t.types.next) : null}
+            {action(job.starred ? 'star-outline' : 'star', job.starred ? 'Remove star' : 'Star as important', async () => {
+              await star(job.id, !job.starred);
+              close();
+            }, t.star)}
             {action('create-outline', 'Edit…', () => onEdit(job))}
             {action('trash-outline', 'Delete', () =>
               confirmDestructive('Delete this job?', job.text, 'Delete', async () => {

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -26,6 +27,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const [topicId, setTopicId] = useState<number | null>(null);
   const [type, setType] = useState<EntryType>('done');
   const [duration, setDuration] = useState<number | null>(null);
+  const [starred, setStarred] = useState(false);
   const [day, setDay] = useState<DayKey>(route.params.day ?? todayKey());
   const [pickingTopic, setPickingTopic] = useState(false);
 
@@ -64,6 +66,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       setTopicId(e.topicId);
       setType(e.type);
       setDuration(e.durationMinutes);
+      setStarred(e.starred);
       setDay(e.day);
       setLoaded(true);
     });
@@ -76,6 +79,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       type,
       durationMinutes: duration,
       day,
+      starred,
     };
     if (entryId == null) await createEntry(d, fields);
     else await updateEntry(d, entryId, fields);
@@ -139,6 +143,16 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
               />
             </View>
           }
+        />
+        <ListRow
+          icon={starred ? 'star' : 'star-outline'}
+          iconColor={t.star}
+          title="Important"
+          subtitle={starred ? 'Starred: highlighted on the topic page' : 'Star it to highlight it on the topic page'}
+          chevron={false}
+          onPress={() => setStarred((v) => !v)}
+          accessibilityLabel={starred ? 'Starred. Tap to remove the star.' : 'Not starred. Tap to star as important.'}
+          right={<Ionicons name={starred ? 'star' : 'star-outline'} size={24} color={starred ? t.star : t.muted} />}
         />
       </ListGroup>
 

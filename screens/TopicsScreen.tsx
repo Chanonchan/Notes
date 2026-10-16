@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GroupLabel, ListGroup, ListRow, ScreenHeader } from '../components/List';
-import { TopicStatusBadge } from '../components/TopicStatusBadge';
+import { TopicIcon } from '../components/TopicIcon';
 import { TagChips } from '../components/TopicTags';
 import { Chip } from '../components/ui';
 import { listTopicStats, topicStatus, type TopicStats } from '../db';
@@ -32,15 +32,10 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
   const row = (s: TopicStats) => (
     <ListRow
       key={s.topic.id}
-      icon="pricetag-outline"
+      leading={<TopicIcon stats={s} />}
       title={s.topic.name}
       subtitle={topicSubtitle(s)}
-      below={
-        <View style={styles.below}>
-          <TopicStatusBadge stats={s} />
-          <TagChips tags={s.tags} />
-        </View>
-      }
+      below={s.tags.length ? <TagChips tags={s.tags} style={styles.below} /> : undefined}
       onPress={() => navigation.navigate('TopicDetail', { topicId: s.topic.id })}
     />
   );
@@ -83,6 +78,6 @@ export function TopicsScreen({ navigation }: TabScreenProps<'Topics'>) {
 const styles = StyleSheet.create({
   container: { paddingBottom: 48 },
   body: { paddingHorizontal: 16 },
-  below: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 },
+  below: { marginTop: 6 },
   empty: { fontSize: 15, textAlign: 'center', paddingVertical: 32 },
 });

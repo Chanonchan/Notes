@@ -348,7 +348,10 @@ function TopicSummaryCard({ s, summary, onOpenEntry }: { s: TopicSummary; summar
               style={({ pressed }) => [styles.item, { backgroundColor: pressed ? t.chip : 'transparent' }]}
             >
               <TypeIcon type={type} size={18} />
-              <Text style={{ color: t.text, fontSize: 15, lineHeight: 21, flex: 1 }}>{item}</Text>
+              <Text style={{ color: t.text, fontSize: 15, lineHeight: 21, flex: 1, fontWeight: s.starredIds.includes(s.itemIds[type][i]) ? '700' : '400' }}>
+                {item}
+              </Text>
+              {s.starredIds.includes(s.itemIds[type][i]) ? <Ionicons name="star" size={16} color={t.star} accessibilityLabel="Starred" /> : null}
             </Pressable>
           )),
         )}

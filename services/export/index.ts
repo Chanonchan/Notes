@@ -142,6 +142,7 @@ export async function importBackup(db: Db, backup: Backup): Promise<ImportResult
         createdAt,
         carriedFromId: e.carriedFromId != null ? (entryIds.get(e.carriedFromId) ?? null) : null,
         tags: Array.isArray(e.tags) ? e.tags.filter((x) => typeof x === 'string') : [],
+        starred: e.starred === true,
       });
       entryIds.set(e.id, created.id);
       existing.add(key);
