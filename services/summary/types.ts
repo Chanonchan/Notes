@@ -49,8 +49,6 @@ export interface Summary {
   openItems: OpenItem[];
   /** Blocked entries in the range, oldest first (their own section). */
   blocked: OpenItem[];
-  /** On hold entries in the range, oldest first (their own section). */
-  onHold: OpenItem[];
   /** Which summarizer produced this (e.g. 'rules', 'claude'). */
   source: string;
 }

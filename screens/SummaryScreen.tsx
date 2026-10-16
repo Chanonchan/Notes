@@ -40,7 +40,7 @@ const KINDS: { value: RangeKind; label: string }[] = [
   { value: 'custom', label: 'Custom' },
 ];
 // Blocked items get their own section, so topic cards leave them out.
-const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'next'];
+const TYPE_ORDER: EntryType[] = ['done', 'on_hold', 'in_progress', 'next'];
 
 export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const t = useTheme();
@@ -293,7 +293,6 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
       ))}
 
       <ClosedSection title="Blocked" items={summary.blocked} singleDay={singleDay} onOpenEntry={onOpenEntry} />
-      <ClosedSection title="On hold" items={summary.onHold} singleDay={singleDay} onOpenEntry={onOpenEntry} />
 
       {summary.openItems.length ? (
         <>
@@ -358,7 +357,7 @@ function TopicSummaryCard({ s, summary, onOpenEntry }: { s: TopicSummary; summar
   );
 }
 
-/** Closed records with their own section (Blocked, On hold). */
+/** Closed records with their own section (Blocked). */
 function ClosedSection({
   title,
   items,

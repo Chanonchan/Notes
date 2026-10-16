@@ -109,14 +109,12 @@ describe('rule-based summary', () => {
     expect(s.blocked.map((o) => [o.entry.text, o.topic?.name])).toEqual([['API keys from vendor', 'Website redesign']]);
   });
 
-  it('gives On hold its own section, kept out of topic lines', async () => {
+  it('lists On hold with the finished work in its topic, not as open', async () => {
     await add(web, 'CMS migration', '2026-10-08', 'on_hold');
     const s = await buildSummary(db, WEEK);
-    expect(s.onHold.map((o) => [o.entry.text, o.topic?.name])).toEqual([['CMS migration', 'Website redesign']]);
+    expect(s.topics[0].items.on_hold).toEqual(['CMS migration']);
     expect(s.openItems.map((o) => o.entry.text)).not.toContain('CMS migration');
-    const text = formatSummaryText(s);
-    expect(text).toContain('On hold:\n  • CMS migration (Website redesign, Thu)');
-    expect(text).not.toMatch(/• On hold/);
+    expect(formatSummaryText(s)).toContain('  • Done (2): Hero layout; Navbar fixes\n  • On hold: CMS migration\n  • In progress: Footer');
   });
 
   it('drops open items later marked Done with the same text, or carried over', async () => {

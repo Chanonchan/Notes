@@ -82,7 +82,6 @@ export function summarizeWithRules(input: SummaryInput): Summary {
     untouched,
     openItems: findOpenItems(input, byId),
     blocked: closedOfType(input, byId, 'blocked'),
-    onHold: closedOfType(input, byId, 'on_hold'),
     source: 'rules',
   };
 }

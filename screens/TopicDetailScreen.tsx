@@ -156,7 +156,7 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 
         <TodoList topicId={topicId} onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} onChecked={offerUndo} />
 
-        {(['blocked', 'on_hold'] as const).map((type) =>
+        {(['blocked'] as const).map((type) =>
           entries.some((e) => e.type === type) ? (
             <View key={type}>
               <GroupLabel right={`${entries.filter((e) => e.type === type).length}`}>{ENTRY_TYPE_LABELS[type]}</GroupLabel>

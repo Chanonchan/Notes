@@ -204,9 +204,9 @@ function UpdateSheet({
           <ListGroup>
             {job.type === 'next' ? action('play-circle', 'Start now', move('in_progress'), t.types.in_progress) : null}
             {action('checkmark-circle', 'Mark done', move('done'), t.types.done)}
+            {action('pause-circle', 'On hold (ended, not needed)', move('on_hold'), t.types.on_hold)}
             {action('chatbox-ellipses-outline', 'Add progress note', () => setWriting(true))}
             {action('alert-circle', 'Blocked (close it as blocked)', move('blocked'), t.types.blocked)}
-            {action('pause-circle', 'Put on hold (not now)', move('on_hold'), t.types.on_hold)}
             {job.type === 'in_progress' ? action('arrow-undo', 'Back to planned', move('next'), t.types.next) : null}
             {action('create-outline', 'Edit…', () => onEdit(job))}
             {action('trash-outline', 'Delete', () =>

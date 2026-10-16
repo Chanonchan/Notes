@@ -9,7 +9,10 @@ export const ENTRY_TYPE_LABELS: Record<EntryType, string> = {
   on_hold: 'On hold',
 };
 
-/** Types that close a job: it leaves the to-do list and lands on the day it was closed. */
+/**
+ * Types that close a job: it leaves the to-do list and lands on the day it was closed.
+ * On hold is finished like Done, just not a satisfying finish (dropped, not needed, parked for good).
+ */
 export const CLOSING_TYPES: EntryType[] = ['done', 'blocked', 'on_hold'];
 
 /** Local calendar date, formatted 'YYYY-MM-DD'. */
