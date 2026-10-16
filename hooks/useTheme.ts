@@ -25,7 +25,7 @@ const light = {
   sheet: '#F5F6F8',
   sheetEdge: 'transparent',
   danger: '#D93A2B',
-  types: { done: '#22A06B', in_progress: '#2F6FEB', blocked: '#D93A2B', next: '#8A919E' } as Record<EntryType, string>,
+  types: { done: '#22A06B', in_progress: '#2F6FEB', blocked: '#D93A2B', next: '#8A919E', on_hold: '#7C5CD6' } as Record<EntryType, string>,
 };
 
 const dark: typeof light = {
@@ -45,7 +45,7 @@ const dark: typeof light = {
   sheet: '#111113',
   sheetEdge: '#48484A',
   danger: '#FF6B5E',
-  types: { done: '#34C77B', in_progress: '#4D94FF', blocked: '#FF6B5E', next: '#9D9DA5' },
+  types: { done: '#34C77B', in_progress: '#4D94FF', blocked: '#FF6B5E', next: '#9D9DA5', on_hold: '#B29BFF' },
 };
 
 export type Theme = typeof light & { dark: boolean };

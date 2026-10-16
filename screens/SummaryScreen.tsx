@@ -24,6 +24,7 @@ import {
   rangeFor,
   rangeLength,
   shiftRange,
+  type OpenItem,
   type RangeKind,
   type Summary,
   type SummaryRange,
@@ -291,26 +292,8 @@ function SummaryBody({ summary, showChart, onOpenEntry }: { summary: Summary; sh
         <TopicSummaryCard key={s.topic?.id ?? 'none'} s={s} summary={summary} onOpenEntry={onOpenEntry} />
       ))}
 
-      {summary.blocked.length ? (
-        <>
-          <GroupLabel right={`${summary.blocked.length}`}>Blocked</GroupLabel>
-          <ListGroup inset={ENTRY_INSET}>
-            {summary.blocked.map(({ entry, topic }) => (
-              <EntryRow
-                key={entry.id}
-                entry={entry}
-                showTime={false}
-                showType={false}
-                subtitle={[topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
-                  .filter(Boolean)
-                  .join(' · ')}
-                onPress={() => onOpenEntry(entry.id)}
-                onTypePress={() => onOpenEntry(entry.id)}
-              />
-            ))}
-          </ListGroup>
-        </>
-      ) : null}
+      <ClosedSection title="Blocked" items={summary.blocked} singleDay={singleDay} onOpenEntry={onOpenEntry} />
+      <ClosedSection title="On hold" items={summary.onHold} singleDay={singleDay} onOpenEntry={onOpenEntry} />
 
       {summary.openItems.length ? (
         <>
@@ -372,6 +355,41 @@ function TopicSummaryCard({ s, summary, onOpenEntry }: { s: TopicSummary; summar
         )}
       </View>
     </ListGroup>
+  );
+}
+
+/** Closed records with their own section (Blocked, On hold). */
+function ClosedSection({
+  title,
+  items,
+  singleDay,
+  onOpenEntry,
+}: {
+  title: string;
+  items: OpenItem[];
+  singleDay: boolean;
+  onOpenEntry: (id: number) => void;
+}) {
+  if (!items.length) return null;
+  return (
+    <>
+      <GroupLabel right={`${items.length}`}>{title}</GroupLabel>
+      <ListGroup inset={ENTRY_INSET}>
+        {items.map(({ entry, topic }) => (
+          <EntryRow
+            key={entry.id}
+            entry={entry}
+            showTime={false}
+            showType={false}
+            subtitle={[topic?.name ?? 'No topic', singleDay ? null : `${weekdayShort(entry.day)} ${Number(entry.day.slice(8))}`]
+              .filter(Boolean)
+              .join(' · ')}
+            onPress={() => onOpenEntry(entry.id)}
+            onTypePress={() => onOpenEntry(entry.id)}
+          />
+        ))}
+      </ListGroup>
+    </>
   );
 }
 

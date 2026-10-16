@@ -81,12 +81,17 @@ export function summarizeWithRules(input: SummaryInput): Summary {
     topics,
     untouched,
     openItems: findOpenItems(input, byId),
-    blocked: input.entries
-      .filter((e) => e.type === 'blocked')
-      .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id)
-      .map((entry) => ({ entry, topic: entry.topicId != null ? (byId.get(entry.topicId) ?? null) : null })),
+    blocked: closedOfType(input, byId, 'blocked'),
+    onHold: closedOfType(input, byId, 'on_hold'),
     source: 'rules',
   };
+}
+
+function closedOfType(input: SummaryInput, byId: Map<number, Topic>, type: EntryType): OpenItem[] {
+  return input.entries
+    .filter((e) => e.type === type)
+    .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id)
+    .map((entry) => ({ entry, topic: entry.topicId != null ? (byId.get(entry.topicId) ?? null) : null }));
 }
 
 function endOfDay(day: string): number {

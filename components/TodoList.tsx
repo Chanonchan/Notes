@@ -8,7 +8,7 @@ import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { daysBetween, formatDayLong, formatRelativeDay, todayKey } from '../services/dates';
 import { confirmDestructive } from '../services/dialogs';
-import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
+import { CLOSING_TYPES, ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
 import { ENTRY_INSET, EntryRow } from './EntryRow';
 import { GroupLabel, ListGroup, ListRow, type IconName } from './List';
 import { Button } from './ui';
@@ -58,7 +58,7 @@ export function TodoList({
       <View>
         <GroupLabel>To-do</GroupLabel>
         <Text style={[styles.empty, { color: t.muted }]}>
-          Nothing open. Log work as In progress or Next and it stays here until it's done or blocked.
+          Nothing open. Log work as In progress or Next and it stays here until it's done, blocked or put on hold.
         </Text>
       </View>
     );
@@ -158,7 +158,7 @@ function UpdateSheet({
   );
   const move = (type: EntryType) => async () => {
     await status(job.id, type);
-    if (type === 'done' || type === 'blocked') onFinished(job, type);
+    if (CLOSING_TYPES.includes(type)) onFinished(job, type);
     else close();
   };
 
@@ -206,6 +206,7 @@ function UpdateSheet({
             {action('checkmark-circle', 'Mark done', move('done'), t.types.done)}
             {action('chatbox-ellipses-outline', 'Add progress note', () => setWriting(true))}
             {action('alert-circle', 'Blocked (close it as blocked)', move('blocked'), t.types.blocked)}
+            {action('pause-circle', 'Put on hold (not now)', move('on_hold'), t.types.on_hold)}
             {job.type === 'in_progress' ? action('arrow-undo', 'Back to planned', move('next'), t.types.next) : null}
             {action('create-outline', 'Edit…', () => onEdit(job))}
             {action('trash-outline', 'Delete', () =>

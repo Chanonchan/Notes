@@ -18,7 +18,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useUndo } from '../hooks/useUndo';
 import { formatDayLong, formatRelativeDay } from '../services/dates';
 import { confirmDestructive, showError } from '../services/dialogs';
-import type { Entry } from '../types';
+import { ENTRY_TYPE_LABELS, type Entry } from '../types';
 import type { RootScreenProps } from '../types/navigation';
 import { topicSubtitle } from './TopicsScreen';
 
@@ -156,26 +156,28 @@ export function TopicDetailScreen({ navigation, route }: RootScreenProps<'TopicD
 
         <TodoList topicId={topicId} onEdit={(e) => navigation.navigate('EntryEdit', { entryId: e.id })} onChecked={offerUndo} />
 
-        {entries.some((e) => e.type === 'blocked') ? (
-          <View>
-            <GroupLabel right={`${entries.filter((e) => e.type === 'blocked').length}`}>Blocked</GroupLabel>
-            <ListGroup inset={ENTRY_INSET}>
-              {entries
-                .filter((e) => e.type === 'blocked')
-                .map((e) => (
-                  <EntryRow
-                    key={e.id}
-                    entry={e}
-                    showTime={false}
-                    showType={false}
-                    subtitle={formatRelativeDay(e.day)}
-                    onPress={() => navigation.navigate('EntryEdit', { entryId: e.id })}
-                    onTypePress={() => actions.open(e)}
-                  />
-                ))}
-            </ListGroup>
-          </View>
-        ) : null}
+        {(['blocked', 'on_hold'] as const).map((type) =>
+          entries.some((e) => e.type === type) ? (
+            <View key={type}>
+              <GroupLabel right={`${entries.filter((e) => e.type === type).length}`}>{ENTRY_TYPE_LABELS[type]}</GroupLabel>
+              <ListGroup inset={ENTRY_INSET}>
+                {entries
+                  .filter((e) => e.type === type)
+                  .map((e) => (
+                    <EntryRow
+                      key={e.id}
+                      entry={e}
+                      showTime={false}
+                      showType={false}
+                      subtitle={formatRelativeDay(e.day)}
+                      onPress={() => navigation.navigate('EntryEdit', { entryId: e.id })}
+                      onTypePress={() => actions.open(e)}
+                    />
+                  ))}
+              </ListGroup>
+            </View>
+          ) : null,
+        )}
 
         {!entries.length ? <Text style={[styles.empty, { color: t.muted }]}>Nothing here yet. Log work for this topic in the box below.</Text> : null}
         {[...byDay].map(([day, list]) => (

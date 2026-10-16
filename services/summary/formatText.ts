@@ -3,7 +3,7 @@ import { ENTRY_TYPE_LABELS, type EntryType } from '../../types';
 import { formatRange, rangeLength } from './ranges';
 import type { Summary, TopicSummary } from './types';
 
-// Blocked has its own section below, so topic lines leave it out.
+// Blocked and On hold have their own sections below, so topic lines leave them out.
 const TYPE_ORDER: EntryType[] = ['done', 'in_progress', 'next'];
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -68,6 +68,14 @@ export function formatSummaryText(summary: Summary): string {
   if (summary.blocked.length) {
     lines.push('', 'Blocked:');
     for (const { entry, topic } of summary.blocked) {
+      const w = where(entry, topic?.name);
+      lines.push(`  • ${entry.text}${w ? ` (${w})` : ''}`);
+    }
+  }
+
+  if (summary.onHold.length) {
+    lines.push('', 'On hold:');
+    for (const { entry, topic } of summary.onHold) {
       const w = where(entry, topic?.name);
       lines.push(`  • ${entry.text}${w ? ` (${w})` : ''}`);
     }

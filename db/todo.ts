@@ -1,9 +1,9 @@
 import { toDayKey } from '../services/dates';
-import type { DayKey, Entry, EntryType } from '../types';
+import { CLOSING_TYPES, type DayKey, type Entry, type EntryType } from '../types';
 import type { Db } from './client';
 import { createEntry, getEntry, queryEntries, updateEntry } from './entries';
 
-/** Open work: never expires, stays until its status is updated. Blocked is a closed record, like Done. */
+/** Open work: never expires, stays until its status is updated. Blocked and On hold are closed records, like Done. */
 export const OPEN_TYPES: EntryType[] = ['in_progress', 'next'];
 
 /** All open jobs from any day: In progress, then planned (Next); oldest first. */
@@ -16,11 +16,11 @@ export async function listOpenItems(db: Db): Promise<Entry[]> {
 }
 
 /**
- * Changes a job's status. Closing a job (Done or Blocked) moves it to the day
+ * Changes a job's status. Closing a job (Done, Blocked or On hold) moves it to the day
  * it was closed, so it shows in that day's log and summary; other changes keep its day.
  */
 export async function setStatus(db: Db, id: number, type: EntryType, today: DayKey = toDayKey()): Promise<Entry> {
-  if (type === 'done' || type === 'blocked') {
+  if (CLOSING_TYPES.includes(type)) {
     const current = await getEntry(db, id);
     if (current && current.day !== today) {
       await db.run('UPDATE entries SET type = ?, day = ?, created_at = ?, updated_at = ? WHERE id = ?', [

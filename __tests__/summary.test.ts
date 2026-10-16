@@ -86,7 +86,7 @@ describe('rule-based summary', () => {
     expect(w.entryCount).toBe(4);
     expect(w.days).toEqual(['2026-10-05', '2026-10-07']);
     expect(w.totalMinutes).toBe(210);
-    expect(w.counts).toEqual({ done: 2, in_progress: 1, blocked: 1, next: 0 });
+    expect(w.counts).toEqual({ done: 2, in_progress: 1, blocked: 1, next: 0, on_hold: 0 });
     expect(w.items.done).toEqual(['Hero layout', 'Navbar fixes']);
     // Each item links back to its entry (for tap-to-edit).
     const ids = w.itemIds.done;
@@ -107,6 +107,16 @@ describe('rule-based summary', () => {
       ['next', 'Send offer'],
     ]);
     expect(s.blocked.map((o) => [o.entry.text, o.topic?.name])).toEqual([['API keys from vendor', 'Website redesign']]);
+  });
+
+  it('gives On hold its own section, kept out of topic lines', async () => {
+    await add(web, 'CMS migration', '2026-10-08', 'on_hold');
+    const s = await buildSummary(db, WEEK);
+    expect(s.onHold.map((o) => [o.entry.text, o.topic?.name])).toEqual([['CMS migration', 'Website redesign']]);
+    expect(s.openItems.map((o) => o.entry.text)).not.toContain('CMS migration');
+    const text = formatSummaryText(s);
+    expect(text).toContain('On hold:\n  • CMS migration (Website redesign, Thu)');
+    expect(text).not.toMatch(/• On hold/);
   });
 
   it('drops open items later marked Done with the same text, or carried over', async () => {

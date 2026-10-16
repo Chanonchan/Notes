@@ -11,6 +11,7 @@ export const TYPE_ICONS: Record<EntryType, IconName> = {
   done: 'checkmark-circle',
   in_progress: 'time',
   blocked: 'alert-circle',
+  on_hold: 'pause-circle',
   next: 'arrow-forward-circle',
 };
 

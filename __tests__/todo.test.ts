@@ -1,5 +1,5 @@
 import type { Db } from '../db/client';
-import { addProgressNote, createEntry, createTopic, getEntry, listOpenItems, setStatus } from '../db';
+import { addProgressNote, createEntry, createTopic, getEntry, listOpenItems, listTopicStats, setStatus, topicStatus } from '../db';
 import { openMigratedDb } from './helpers/nodeDb';
 
 let db: Db;
@@ -33,6 +33,18 @@ describe('to-do list', () => {
     const e = await createEntry(db, { topicId: null, text: 'Ship release', type: 'in_progress', day: '2026-10-01' });
     expect(await setStatus(db, e.id, 'blocked', '2026-10-15')).toMatchObject({ type: 'blocked', day: '2026-10-15' });
     expect(await listOpenItems(db)).toHaveLength(0);
+  });
+
+  it('putting a job on hold closes it like Done, and it can be resumed', async () => {
+    const web = await createTopic(db, 'Website');
+    const e = await createEntry(db, { topicId: web.id, text: 'Rewrite CMS', type: 'in_progress', day: '2026-10-01' });
+    expect(await setStatus(db, e.id, 'on_hold', '2026-10-15')).toMatchObject({ type: 'on_hold', day: '2026-10-15' });
+    expect(await listOpenItems(db)).toHaveLength(0);
+    const stats = (await listTopicStats(db))[0];
+    expect(stats).toMatchObject({ onHoldCount: 1, inProgressCount: 0 });
+    expect(topicStatus(stats)).toBe('done');
+    await setStatus(db, e.id, 'in_progress', '2026-10-20');
+    expect((await listOpenItems(db)).map((x) => x.text)).toEqual(['Rewrite CMS']);
   });
 
   it('a progress note is logged today and leaves the job open', async () => {

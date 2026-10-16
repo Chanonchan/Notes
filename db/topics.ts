@@ -124,6 +124,7 @@ export interface TopicStats {
   inProgressCount: number;
   blockedCount: number;
   nextCount: number;
+  onHoldCount: number;
   /** The topic's tags, A–Z. */
   tags: string[];
 }
@@ -133,7 +134,8 @@ export type TopicStatus = 'done' | 'working' | 'blocked';
 
 /**
  * One status for the whole topic: Blocked if anything in it is blocked,
- * else Working if anything is in progress or planned, else Done.
+ * else Working if anything is in progress or planned, else Done (On hold
+ * counts as closed, like Done).
  * Null for a topic with no entries.
  */
 export function topicStatus(s: Pick<TopicStats, 'entryCount' | 'blockedCount' | 'inProgressCount' | 'nextCount'>): TopicStatus | null {
@@ -144,7 +146,7 @@ export function topicStatus(s: Pick<TopicStats, 'entryCount' | 'blockedCount' | 
 }
 
 export async function listTopicStats(db: Db, opts: { includeArchived?: boolean } = {}): Promise<TopicStats[]> {
-  const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null; blocked_count: number; done_count: number; in_progress_count: number; next_count: number }>(
+  const rows = await db.all<TopicRow & { entry_count: number; total_minutes: number; days_active: number; last_day: string | null; blocked_count: number; done_count: number; in_progress_count: number; next_count: number; on_hold_count: number }>(
     `SELECT t.*,
             COUNT(e.id) AS entry_count,
             COALESCE(SUM(e.duration_minutes), 0) AS total_minutes,
@@ -153,7 +155,8 @@ export async function listTopicStats(db: Db, opts: { includeArchived?: boolean }
             COALESCE(SUM(e.type = 'blocked'), 0) AS blocked_count,
             COALESCE(SUM(e.type = 'done'), 0) AS done_count,
             COALESCE(SUM(e.type = 'in_progress'), 0) AS in_progress_count,
-            COALESCE(SUM(e.type = 'next'), 0) AS next_count
+            COALESCE(SUM(e.type = 'next'), 0) AS next_count,
+            COALESCE(SUM(e.type = 'on_hold'), 0) AS on_hold_count
      FROM topics t LEFT JOIN entries e ON e.topic_id = t.id
      ${opts.includeArchived ? '' : 'WHERE t.archived = 0'}
      GROUP BY t.id
@@ -171,5 +174,6 @@ export async function listTopicStats(db: Db, opts: { includeArchived?: boolean }
     inProgressCount: r.in_progress_count,
     blockedCount: r.blocked_count,
     nextCount: r.next_count,
+    onHoldCount: r.on_hold_count,
   }));
 }
