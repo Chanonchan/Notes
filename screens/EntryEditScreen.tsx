@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { DeadlineSheet } from '../components/DeadlineSheet';
 import { DurationChips } from '../components/DurationChips';
 import { GroupLabel, IconTile, ListGroup, ListRow, tint } from '../components/List';
 import { TopicSheet } from '../components/TopicPicker';
@@ -11,6 +12,7 @@ import { useTopics } from '../hooks/useData';
 import { useDb, useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { addDays, formatDayLong, todayKey } from '../services/dates';
+import { formatDue } from '../services/deadline';
 import { confirmDestructive, showError } from '../services/dialogs';
 import type { DayKey, EntryType } from '../types';
 import type { RootScreenProps } from '../types/navigation';
@@ -28,6 +30,8 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
   const [type, setType] = useState<EntryType>('done');
   const [duration, setDuration] = useState<number | null>(null);
   const [starred, setStarred] = useState(false);
+  const [dueDay, setDueDay] = useState<string | null>(null);
+  const [pickingDue, setPickingDue] = useState(false);
   const [day, setDay] = useState<DayKey>(route.params.day ?? todayKey());
   const [pickingTopic, setPickingTopic] = useState(false);
 
@@ -67,6 +71,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       setType(e.type);
       setDuration(e.durationMinutes);
       setStarred(e.starred);
+      setDueDay(e.dueDay);
       setDay(e.day);
       setLoaded(true);
     });
@@ -80,6 +85,7 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
       durationMinutes: duration,
       day,
       starred,
+      dueDay,
     };
     if (entryId == null) await createEntry(d, fields);
     else await updateEntry(d, entryId, fields);
@@ -158,6 +164,37 @@ export function EntryEditScreen({ navigation, route }: RootScreenProps<'EntryEdi
 
       <GroupLabel>Type</GroupLabel>
       <TypeSelector value={type} onChange={setType} />
+
+      {type === 'in_progress' || type === 'next' ? (
+        <>
+          <GroupLabel>Deadline</GroupLabel>
+          <ListGroup>
+            <ListRow
+              icon="calendar-outline"
+              title={dueDay ? formatDue(dueDay, today).label : 'No deadline'}
+              subtitle={dueDay ? formatDayLong(dueDay) : 'Optional. Jobs with the nearest deadline show first on Today.'}
+              onPress={() => setPickingDue(true)}
+              accessibilityLabel={dueDay ? `Deadline ${formatDayLong(dueDay)}. Tap to change.` : 'Add a deadline'}
+              right={
+                dueDay ? (
+                  <Pressable onPress={() => setDueDay(null)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Remove deadline">
+                    <Ionicons name="close-circle" size={22} color={t.muted} />
+                  </Pressable>
+                ) : undefined
+              }
+            />
+          </ListGroup>
+          <DeadlineSheet
+            visible={pickingDue}
+            value={dueDay}
+            onClose={() => setPickingDue(false)}
+            onPick={(d) => {
+              setDueDay(d);
+              setPickingDue(false);
+            }}
+          />
+        </>
+      ) : null}
 
       <GroupLabel>Time spent</GroupLabel>
       <DurationChips value={duration} onChange={setDuration} />

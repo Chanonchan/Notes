@@ -6,12 +6,13 @@ import { createEntry, getEntry, queryEntries, updateEntry } from './entries';
 /** Open work: never expires, stays until its status is updated. Blocked and On hold are closed records, like Done. */
 export const OPEN_TYPES: EntryType[] = ['in_progress', 'next'];
 
-/** All open jobs from any day: In progress, then planned (Next); oldest first. */
+/** All open jobs from any day: In progress, then planned (Next); within each, nearest deadline first, then oldest first. */
 export async function listOpenItems(db: Db): Promise<Entry[]> {
   return queryEntries(
     db,
     `SELECT * FROM entries WHERE type IN ('in_progress', 'next')
-     ORDER BY CASE type WHEN 'in_progress' THEN 0 ELSE 1 END, day, created_at, id`,
+     ORDER BY CASE type WHEN 'in_progress' THEN 0 ELSE 1 END,
+              due_day IS NULL, due_day, day, created_at, id`,
   );
 }
 

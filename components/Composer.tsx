@@ -7,9 +7,12 @@ import { useLastTopicId, useTopicSuggestion, useTopics } from '../hooks/useData'
 import { useMutation } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import type { UndoInfo } from '../hooks/useUndo';
-import { formatDuration } from '../services/dates';
+import { formatDuration, todayKey } from '../services/dates';
+import { formatDue } from '../services/deadline';
 import { ENTRY_TYPE_LABELS, type EntryType } from '../types';
+import { DeadlineSheet } from './DeadlineSheet';
 import { DurationChips } from './DurationChips';
+import { Chip } from './ui';
 import { TYPE_ICONS } from './EntryRow';
 import { TopicPicker } from './TopicPicker';
 import { TypeSelector } from './TypeSelector';
@@ -49,6 +52,9 @@ export function Composer({
   const [topicId, setTopicId] = useState<number | null>(fixedTopicId ?? null);
   const [type, setType] = useState<EntryType>('done');
   const [duration, setDuration] = useState<number | null>(null);
+  const [dueDay, setDueDay] = useState<string | null>(null);
+  const [pickingDue, setPickingDue] = useState(false);
+  const isOpenType = type === 'in_progress' || type === 'next';
   const [showOptions, setShowOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
@@ -64,7 +70,7 @@ export function Composer({
   }, [fixedTopicId, pickTopicMode]);
 
   const add = useMutation(async (db) => {
-    await createEntry(db, { topicId, text, type, durationMinutes: duration });
+    await createEntry(db, { topicId, text, type, durationMinutes: duration, dueDay: isOpenType ? dueDay : null });
     if (pickTopicMode) await setLastTopicId(db, topicId);
   });
   const addTopic = useMutation((db, name: string, tags: string[]) => createTopicWithTags(db, name, tags));
@@ -78,6 +84,7 @@ export function Composer({
       setText('');
       setType('done');
       setDuration(null);
+      setDueDay(null);
       setShowOptions(false);
       setToast(true);
       setTimeout(() => setToast(false), 1400);
@@ -115,9 +122,30 @@ export function Composer({
       {showOptions ? (
         <View style={styles.options}>
           <TypeSelector value={type} onChange={setType} />
+          {isOpenType ? (
+            <View style={styles.dueRow}>
+              <Chip
+                label={dueDay ? formatDue(dueDay, todayKey()).label : 'No deadline'}
+                selected={!!dueDay}
+                accessibilityLabel={dueDay ? `Deadline: ${formatDue(dueDay, todayKey()).label}. Tap to change.` : 'Add a deadline'}
+                onPress={() => setPickingDue(true)}
+              />
+              {dueDay ? <Chip label="✕" accessibilityLabel="Remove deadline" onPress={() => setDueDay(null)} /> : null}
+            </View>
+          ) : null}
           <DurationChips value={duration} onChange={setDuration} />
         </View>
       ) : null}
+
+      <DeadlineSheet
+        visible={pickingDue}
+        value={dueDay}
+        onClose={() => setPickingDue(false)}
+        onPick={(d) => {
+          setDueDay(d);
+          setPickingDue(false);
+        }}
+      />
 
       <View style={styles.inputRow}>
         <Pressable
@@ -197,6 +225,7 @@ const styles = StyleSheet.create({
   },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10 },
   options: { gap: 10 },
+  dueRow: { flexDirection: 'row', gap: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   input: {
     flex: 1,

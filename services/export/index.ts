@@ -143,6 +143,7 @@ export async function importBackup(db: Db, backup: Backup): Promise<ImportResult
         carriedFromId: e.carriedFromId != null ? (entryIds.get(e.carriedFromId) ?? null) : null,
         tags: Array.isArray(e.tags) ? e.tags.filter((x) => typeof x === 'string') : [],
         starred: e.starred === true,
+        dueDay: typeof e.dueDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.dueDay) ? e.dueDay : null,
       });
       entryIds.set(e.id, created.id);
       existing.add(key);

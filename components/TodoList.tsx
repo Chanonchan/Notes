@@ -7,8 +7,10 @@ import { useTopics } from '../hooks/useData';
 import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { daysBetween, formatDayLong, formatRelativeDay, todayKey } from '../services/dates';
+import { formatDue } from '../services/deadline';
 import { confirmDestructive } from '../services/dialogs';
 import { CLOSING_TYPES, ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
+import { DeadlineSheet } from './DeadlineSheet';
 import { ENTRY_INSET, EntryRow } from './EntryRow';
 import { GroupLabel, ListGroup, ListRow, type IconName } from './List';
 import { Button } from './ui';
@@ -146,6 +148,8 @@ function UpdateSheet({
   const progress = useMutation((db, e: Entry, text: string) => addProgressNote(db, e, text, today));
   const remove = useMutation((db, id: number) => deleteEntry(db, id));
   const star = useMutation((db, id: number, starred: boolean) => updateEntry(db, id, { starred }));
+  const setDue = useMutation((db, id: number, dueDay: string | null) => updateEntry(db, id, { dueDay }));
+  const [pickingDue, setPickingDue] = useState(false);
 
   const close = () => {
     setNote('');
@@ -209,6 +213,7 @@ function UpdateSheet({
             {action('chatbox-ellipses-outline', 'Add progress note', () => setWriting(true))}
             {action('alert-circle', 'Blocked (close it as blocked)', move('blocked'), t.types.blocked)}
             {job.type === 'in_progress' ? action('arrow-undo', 'Back to planned', move('next'), t.types.next) : null}
+            {action('calendar-outline', job.dueDay ? `Deadline: ${formatDue(job.dueDay, today).label.replace(/^Due /, '')}` : 'Set a deadline', () => setPickingDue(true))}
             {action(job.starred ? 'star-outline' : 'star', job.starred ? 'Remove star' : 'Star as important', async () => {
               await star(job.id, !job.starred);
               close();
@@ -224,6 +229,16 @@ function UpdateSheet({
         )}
         {!writing ? <Button label="Cancel" kind="secondary" onPress={close} style={{ marginTop: 12 }} /> : null}
       </View>
+      <DeadlineSheet
+        visible={pickingDue}
+        value={job.dueDay}
+        onClose={() => setPickingDue(false)}
+        onPick={async (d) => {
+          await setDue(job.id, d);
+          setPickingDue(false);
+          close();
+        }}
+      />
     </Modal>
   );
 }

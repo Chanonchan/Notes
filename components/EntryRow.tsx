@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../hooks/useTheme';
-import { formatDuration, formatTime } from '../services/dates';
+import { formatDuration, formatTime, todayKey } from '../services/dates';
+import { formatDue, type DueTone } from '../services/deadline';
 import { ENTRY_TYPE_LABELS, type Entry, type EntryType } from '../types';
 import { IconTile, type IconName } from './List';
 
@@ -64,6 +65,9 @@ export function EntryRow({
   onCheck?: () => void;
 }) {
   const t = useTheme();
+  // Deadlines only matter while the job is open.
+  const due = entry.dueDay && (entry.type === 'in_progress' || entry.type === 'next') ? formatDue(entry.dueDay, todayKey()) : null;
+  const dueColor = (tone: DueTone) => (tone === 'overdue' ? t.danger : tone === 'soon' ? t.star : t.muted);
   const meta = [
     showType && entry.type !== 'done' ? ENTRY_TYPE_LABELS[entry.type] : null,
     subtitle,
@@ -96,6 +100,12 @@ export function EntryRow({
             {meta.join(' · ')}
           </Text>
         ) : null}
+        {due ? (
+          <View style={styles.due} accessibilityLabel={due.label}>
+            <Ionicons name={due.tone === 'overdue' ? 'alert-circle' : 'calendar-outline'} size={14} color={dueColor(due.tone)} />
+            <Text style={[styles.dueText, { color: dueColor(due.tone) }]}>{due.label}</Text>
+          </View>
+        ) : null}
       </View>
       {entry.starred ? <Ionicons name="star" size={16} color={t.star} style={styles.star} accessibilityLabel="Starred" /> : null}
       {onCheck ? (
@@ -123,4 +133,6 @@ const styles = StyleSheet.create({
   check: { paddingLeft: 4, alignSelf: 'center' },
   star: { paddingTop: 3 },
   starredText: { fontWeight: '700' },
+  due: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  dueText: { fontSize: 13, fontWeight: '700' },
 });

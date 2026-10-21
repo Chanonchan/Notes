@@ -28,6 +28,7 @@ describe('migration 003 (on hold)', () => {
     expect(r.lastInsertRowId).toBe(3);
     await db.run('DELETE FROM entries WHERE id = 1');
     expect(await db.all('SELECT entry_id FROM entry_tags')).toEqual([{ entry_id: 2 }]);
-    expect((await db.all("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'entries' AND name LIKE 'idx_%'")).length).toBe(4);
+    const indexes = (await db.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'entries'")).map((r) => r.name);
+    expect(indexes).toEqual(expect.arrayContaining(['idx_entries_day', 'idx_entries_topic_day', 'idx_entries_type', 'idx_entries_carried_from']));
   });
 });

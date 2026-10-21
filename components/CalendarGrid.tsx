@@ -6,7 +6,7 @@ import type { DayKey } from '../types';
 
 const WEEKDAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** Month grid (weeks start Monday). Days with entries get a dot; future days are disabled. */
+/** Month grid (weeks start Monday). Days with entries get a dot; future days are disabled unless `allowFuture`. */
 export function CalendarGrid({
   year,
   month,
@@ -14,6 +14,7 @@ export function CalendarGrid({
   selected,
   today,
   onSelect,
+  allowFuture = false,
 }: {
   year: number;
   month: number;
@@ -21,6 +22,8 @@ export function CalendarGrid({
   selected: DayKey;
   today: DayKey;
   onSelect: (day: DayKey) => void;
+  /** For picking deadlines. */
+  allowFuture?: boolean;
 }) {
   const t = useTheme();
   const first = new Date(year, month, 1);
@@ -48,7 +51,7 @@ export function CalendarGrid({
             const n = counts.get(day) ?? 0;
             const isSel = day === selected;
             const isToday = day === today;
-            const future = day > today;
+            const future = !allowFuture && day > today;
             return (
               <Pressable
                 key={day}

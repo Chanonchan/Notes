@@ -44,6 +44,8 @@ export interface Entry {
   tags: string[];
   /** Starred: important to its project; highlighted on the topic page and in summaries. */
   starred: boolean;
+  /** Optional deadline for open work; nearest first on the to-do list. */
+  dueDay: DayKey | null;
 }
 
 export interface NewEntry {
@@ -57,8 +59,9 @@ export interface NewEntry {
   carriedFromId?: number | null;
   tags?: string[];
   starred?: boolean;
+  dueDay?: DayKey | null;
 }
 
 export type EntryPatch = Partial<
-  Pick<Entry, 'topicId' | 'text' | 'type' | 'durationMinutes' | 'day' | 'tags' | 'starred'>
+  Pick<Entry, 'topicId' | 'text' | 'type' | 'durationMinutes' | 'day' | 'tags' | 'starred' | 'dueDay'>
 >;

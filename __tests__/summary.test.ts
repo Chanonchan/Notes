@@ -178,7 +178,7 @@ describe('rule-based summary', () => {
     const topic = { id: 1, name: 'T', color: '#000', archived: false, createdAt: 0 };
     const mk = (id: number, text: string): Entry => ({
       id, topicId: 1, text, type: 'done', durationMinutes: null, day: '2026-10-05',
-      createdAt: id, updatedAt: id, carriedFromId: null, tags: [], starred: false,
+      createdAt: id, updatedAt: id, carriedFromId: null, tags: [], starred: false, dueDay: null,
     });
     const s = summarizeWithRules({ range: WEEK, entries: [mk(1, 'Standup'), mk(2, 'standup ')], topics: [topic], continuedIds: new Set() });
     expect(s.topics[0].items.done).toEqual(['Standup']);

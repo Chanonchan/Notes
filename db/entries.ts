@@ -14,6 +14,7 @@ interface EntryRow {
   updated_at: number;
   carried_from_id: number | null;
   starred: number;
+  due_day: string | null;
 }
 
 const toEntry = (r: EntryRow, tags: string[] = []): Entry => ({
@@ -28,6 +29,7 @@ const toEntry = (r: EntryRow, tags: string[] = []): Entry => ({
   carriedFromId: r.carried_from_id,
   tags,
   starred: r.starred === 1,
+  dueDay: r.due_day ?? null,
 });
 
 async function withTags(db: Db, rows: EntryRow[]): Promise<Entry[]> {
@@ -35,7 +37,8 @@ async function withTags(db: Db, rows: EntryRow[]): Promise<Entry[]> {
   return rows.map((r) => toEntry(r, tags.get(r.id)));
 }
 
-function validate(text: string | undefined, type: string | undefined, duration: number | null | undefined) {
+function validate(text: string | undefined, type: string | undefined, duration: number | null | undefined, dueDay?: string | null) {
+  if (dueDay != null && !/^\d{4}-\d{2}-\d{2}$/.test(dueDay)) throw new Error('Deadline must be a day (YYYY-MM-DD)');
   if (text !== undefined && !text.trim()) throw new Error('Entry text is required');
   if (type !== undefined && !ENTRY_TYPES.includes(type as Entry['type'])) {
     throw new Error(`Invalid entry type: ${type}`);
@@ -46,7 +49,7 @@ function validate(text: string | undefined, type: string | undefined, duration: 
 }
 
 export async function createEntry(db: Db, input: NewEntry): Promise<Entry> {
-  validate(input.text, input.type, input.durationMinutes);
+  validate(input.text, input.type, input.durationMinutes, input.dueDay);
   const now = Date.now();
   const day = input.day ?? toDayKey(input.createdAt ?? now);
   // Entries added to another day get a timestamp on that day.
@@ -55,8 +58,8 @@ export async function createEntry(db: Db, input: NewEntry): Promise<Entry> {
 
   await db.transaction(async () => {
     const res = await db.run(
-      `INSERT INTO entries (topic_id, text, type, duration_minutes, day, created_at, updated_at, carried_from_id, starred)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO entries (topic_id, text, type, duration_minutes, day, created_at, updated_at, carried_from_id, starred, due_day)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.topicId,
         input.text.trim(),
@@ -67,6 +70,7 @@ export async function createEntry(db: Db, input: NewEntry): Promise<Entry> {
         now,
         input.carriedFromId ?? null,
         input.starred ? 1 : 0,
+        input.dueDay ?? null,
       ],
     );
     id = res.lastInsertRowId;
@@ -86,7 +90,7 @@ export async function getEntry(db: Db, id: number): Promise<Entry | null> {
 }
 
 export async function updateEntry(db: Db, id: number, patch: EntryPatch): Promise<Entry> {
-  validate(patch.text, patch.type, patch.durationMinutes);
+  validate(patch.text, patch.type, patch.durationMinutes, patch.dueDay);
   const sets: string[] = [];
   const params: SqlValue[] = [];
   const set = (col: string, v: SqlValue) => {
@@ -98,6 +102,7 @@ export async function updateEntry(db: Db, id: number, patch: EntryPatch): Promis
   if (patch.text !== undefined) set('text', patch.text.trim());
   if (patch.type !== undefined) set('type', patch.type);
   if (patch.starred !== undefined) set('starred', patch.starred ? 1 : 0);
+  if (patch.dueDay !== undefined) set('due_day', patch.dueDay);
   if (patch.durationMinutes !== undefined) {
     set('duration_minutes', patch.durationMinutes == null ? null : Math.round(patch.durationMinutes));
   }
