@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -108,10 +108,10 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
   const shareExcel = async () => {
     if (!summary) return;
     try {
-      const res = await saveBinaryFile(summaryFilename(summary), formatSummaryXlsx(summary), XLSX_MIME, 'org.openxmlformats.spreadsheetml.sheet');
+      const res = await saveBinaryFile(summaryFilename(summary), formatSummaryXlsx(summary), XLSX_MIME);
       if (res === 'downloaded') flash('Excel file downloaded');
     } catch (e) {
-      showError('Could not share the Excel file', e);
+      showError('Could not export to Excel', e);
     }
   };
 
@@ -199,15 +199,17 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
                   void share();
                 }}
               />
-              <ListRow
-                icon="grid-outline"
-                title="Share as Excel (.xlsx)"
-                chevron={false}
-                onPress={() => {
-                  setMenuOpen(false);
-                  void shareExcel();
-                }}
-              />
+              {Platform.OS === 'web' ? (
+                <ListRow
+                  icon="grid-outline"
+                  title="Export to Excel"
+                  chevron={false}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    void shareExcel();
+                  }}
+                />
+              ) : null}
               <ListRow
                 icon="create-outline"
                 title={draft ? 'Edit text · edited' : 'Edit text'}

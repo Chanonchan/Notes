@@ -1,5 +1,3 @@
-import { File as NativeFile, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import { Platform, Share } from 'react-native';
 
 /**
@@ -16,24 +14,12 @@ export async function saveTextFile(filename: string, text: string, mime: string)
 }
 
 /**
- * Hands a binary file (e.g. .xlsx) to the user. Web: share sheet with the
- * file, else a download. Native: saved to the cache, then the share sheet
- * (Files, Mail, Excel, AirDrop…).
+ * Hands a binary file (e.g. .xlsx) to the user: share sheet with the file
+ * attached, else a normal download. Web only (that's how the app ships);
+ * native would need expo-file-system + expo-sharing.
  */
-export async function saveBinaryFile(
-  filename: string,
-  data: Uint8Array,
-  mime: string,
-  uti?: string,
-): Promise<'shared' | 'downloaded' | 'dismissed'> {
-  if (Platform.OS !== 'web') {
-    if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing files is not available on this device.');
-    const file = new NativeFile(Paths.cache, filename);
-    file.create({ overwrite: true });
-    file.write(data);
-    await Sharing.shareAsync(file.uri, { mimeType: mime, UTI: uti, dialogTitle: filename });
-    return 'shared';
-  }
+export async function saveBinaryFile(filename: string, data: Uint8Array, mime: string): Promise<'shared' | 'downloaded' | 'dismissed'> {
+  if (Platform.OS !== 'web') throw new Error('Exporting files works in the web app.');
   // Copy into a plain ArrayBuffer-backed array so Blob accepts it everywhere.
   return shareOrDownloadOnWeb(new File([new Uint8Array(data)], filename, { type: mime }));
 }
