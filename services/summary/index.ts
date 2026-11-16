@@ -5,6 +5,7 @@ import type { Summarizer, Summary, SummaryInput, SummaryRange } from './types';
 
 export * from './types';
 export { formatSummaryText, formatTopicLine } from './formatText';
+export { formatSummaryXlsx, summaryFilename, summaryToSheets } from './formatXlsx';
 export { formatRange, rangeFor, rangeLength, shiftRange } from './ranges';
 export { summarizeWithRules } from './ruleBased';
 

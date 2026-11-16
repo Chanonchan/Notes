@@ -1,3 +1,5 @@
+import { File as NativeFile, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { Platform, Share } from 'react-native';
 
 /**
@@ -10,7 +12,34 @@ export async function saveTextFile(filename: string, text: string, mime: string)
     const res = await Share.share({ message: text, title: filename });
     return res.action === Share.dismissedAction ? 'dismissed' : 'shared';
   }
-  const file = new File([text], filename, { type: mime });
+  return shareOrDownloadOnWeb(new File([text], filename, { type: mime }));
+}
+
+/**
+ * Hands a binary file (e.g. .xlsx) to the user. Web: share sheet with the
+ * file, else a download. Native: saved to the cache, then the share sheet
+ * (Files, Mail, Excel, AirDrop…).
+ */
+export async function saveBinaryFile(
+  filename: string,
+  data: Uint8Array,
+  mime: string,
+  uti?: string,
+): Promise<'shared' | 'downloaded' | 'dismissed'> {
+  if (Platform.OS !== 'web') {
+    if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing files is not available on this device.');
+    const file = new NativeFile(Paths.cache, filename);
+    file.create({ overwrite: true });
+    file.write(data);
+    await Sharing.shareAsync(file.uri, { mimeType: mime, UTI: uti, dialogTitle: filename });
+    return 'shared';
+  }
+  // Copy into a plain ArrayBuffer-backed array so Blob accepts it everywhere.
+  return shareOrDownloadOnWeb(new File([new Uint8Array(data)], filename, { type: mime }));
+}
+
+async function shareOrDownloadOnWeb(file: File): Promise<'shared' | 'downloaded' | 'dismissed'> {
+  const filename = file.name;
   const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
   if (nav.share && nav.canShare?.({ files: [file] })) {
     try {

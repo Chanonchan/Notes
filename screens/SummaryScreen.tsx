@@ -15,15 +15,19 @@ import { useMutation, useQuery } from '../hooks/useDb';
 import { useTheme } from '../hooks/useTheme';
 import { formatDuration, todayKey, weekdayShort } from '../services/dates';
 import { showError } from '../services/dialogs';
+import { saveBinaryFile } from '../services/export/files';
+import { XLSX_MIME } from '../services/export/xlsx';
 import { copyText, shareText } from '../services/share';
 import {
   buildSummary,
   formatRange,
   formatSummaryText,
+  formatSummaryXlsx,
   formatTopicLine,
   rangeFor,
   rangeLength,
   shiftRange,
+  summaryFilename,
   type OpenItem,
   type RangeKind,
   type Summary,
@@ -101,6 +105,16 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
     }
   };
 
+  const shareExcel = async () => {
+    if (!summary) return;
+    try {
+      const res = await saveBinaryFile(summaryFilename(summary), formatSummaryXlsx(summary), XLSX_MIME, 'org.openxmlformats.spreadsheetml.sheet');
+      if (res === 'downloaded') flash('Excel file downloaded');
+    } catch (e) {
+      showError('Could not share the Excel file', e);
+    }
+  };
+
   const showChart = range.kind === 'month' || (range.kind === 'custom' && rangeLength(range) >= 14);
 
   return (
@@ -113,7 +127,7 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
               <Pressable
                 onPress={() => setMenuOpen(true)}
                 accessibilityRole="button"
-                accessibilityLabel="Copy, share or edit the summary"
+                accessibilityLabel="Copy, share, export or edit the summary"
                 hitSlop={10}
                 style={[styles.shareBtn, { backgroundColor: t.card, borderColor: t.cardBorder }]}
               >
@@ -186,6 +200,15 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
                 }}
               />
               <ListRow
+                icon="grid-outline"
+                title="Share as Excel (.xlsx)"
+                chevron={false}
+                onPress={() => {
+                  setMenuOpen(false);
+                  void shareExcel();
+                }}
+              />
+              <ListRow
                 icon="create-outline"
                 title={draft ? 'Edit text · edited' : 'Edit text'}
                 subtitle={staleDraft ? 'Your log changed since you edited' : undefined}
@@ -197,7 +220,7 @@ export function SummaryScreen({ navigation }: TabScreenProps<'Summary'>) {
                 }}
               />
             </ListGroup>
-            {draft ? <Text style={[styles.menuNote, { color: t.muted }]}>Copy and Share use your edited text.</Text> : null}
+            {draft ? <Text style={[styles.menuNote, { color: t.muted }]}>Copy and Share use your edited text. Excel uses your log.</Text> : null}
           </View>
         </Pressable>
       </Modal>
