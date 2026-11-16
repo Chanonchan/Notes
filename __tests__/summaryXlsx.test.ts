@@ -75,8 +75,9 @@ describe('summary as Excel', () => {
   let db: Db;
   let web: Topic;
 
-  const add = (topic: Topic | null, text: string, day: string, type: Entry['type'] = 'done', durationMinutes: number | null = null, hour = 10) =>
+  const add = (topic: Topic | null, text: string, day: string, type: Entry['type'] = 'done', durationMinutes: number | null = null, hour = 10, tags: string[] = []) =>
     createEntry(db, {
+      tags,
       topicId: topic?.id ?? null,
       text,
       day,
@@ -90,9 +91,12 @@ describe('summary as Excel', () => {
     web = await createTopic(db, 'Website');
     await createTopic(db, 'Infra');
     await db.run('UPDATE topics SET created_at = 0');
-    await add(web, 'Hero layout', '2026-10-05', 'done', 90);
+    await add(web, 'Hero layout', '2026-10-05', 'done', 90, 10, ['ui']);
+    await add(web, 'hero layout', '2026-10-06', 'done', null, 9, ['ui', 'design']); // repeat: merged, tags combined
     await add(web, 'API keys', '2026-10-06', 'blocked');
     await add(web, 'Footer', '2026-10-07', 'in_progress', 30, 12);
+    await add(web, 'Tests', '2026-10-07', 'next', null, 13, ['qa']);
+    await add(web, 'CMS', '2026-10-07', 'on_hold', null, 14);
     await add(null, 'Expenses', '2026-10-08', 'done', 15);
     await db.run("UPDATE entries SET starred = 1 WHERE text = 'Hero layout'");
   });
@@ -105,13 +109,15 @@ describe('summary as Excel', () => {
       [{ value: 'Work summary', style: 'title' }],
       ['Week of Mon 5 Oct – Sun 11 Oct 2026'],
       [],
-      [{ value: 'Website', style: 'bold' }],
-      ['- Hero layout'],
-      ['- Footer'],
-      ['- API keys'],
+      [{ value: 'Website', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }],
+      ['- Hero layout', 'Done', '#ui #design'],
+      ['- CMS', 'On hold', null],
+      ['- Footer', 'In progress', null],
+      ['- Tests', 'Next', '#qa'],
+      ['- API keys', 'Blocked', null],
       [],
-      [{ value: 'No topic', style: 'bold' }],
-      ['- Expenses'],
+      [{ value: 'No topic', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }],
+      ['- Expenses', 'Done', null],
     ]);
 
     const files = unzip(formatSummaryXlsx(s));

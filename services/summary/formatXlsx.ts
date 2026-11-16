@@ -1,5 +1,5 @@
 import { buildXlsx, type Cell, type Sheet } from '../export/xlsx';
-import type { EntryType } from '../../types';
+import { ENTRY_TYPE_LABELS, type EntryType } from '../../types';
 import { formatRange } from './ranges';
 import type { Summary } from './types';
 
@@ -8,18 +8,21 @@ const TYPE_ORDER: EntryType[] = ['done', 'on_hold', 'in_progress', 'next', 'bloc
 
 /**
  * The summary as one simple sheet: each topic in bold, its items listed
- * underneath as "- item", a blank row between topics.
+ * underneath as "- item" with their status and tags beside them.
  */
 export function summaryToSheets(summary: Summary): Sheet[] {
   const rows: Cell[][] = [[{ value: 'Work summary', style: 'title' }], [formatRange(summary.range)]];
   if (!summary.topics.length) rows.push([], ['Nothing logged.']);
   for (const t of summary.topics) {
-    rows.push([], [{ value: t.topic?.name ?? 'No topic', style: 'bold' }]);
+    rows.push([], [{ value: t.topic?.name ?? 'No topic', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }]);
     for (const type of TYPE_ORDER) {
-      for (const text of t.items[type]) rows.push([`- ${text}`]);
+      t.items[type].forEach((text, i) => {
+        const tags = t.itemTags[type][i] ?? [];
+        rows.push([`- ${text}`, ENTRY_TYPE_LABELS[type], tags.length ? tags.map((x) => `#${x}`).join(' ') : null]);
+      });
     }
   }
-  return [{ name: 'Summary', rows, widths: [80] }];
+  return [{ name: 'Summary', rows, widths: [44, 12, 24] }];
 }
 
 export function formatSummaryXlsx(summary: Summary): Uint8Array {
