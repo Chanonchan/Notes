@@ -93,7 +93,7 @@ describe('summary as Excel', () => {
     await setTopicTags(db, web.id, ['Client work', 'web']);
     await db.run('UPDATE topics SET created_at = 0');
     await add(web, 'Hero layout', '2026-10-05', 'done', 90, 10, ['ui']);
-    await add(web, 'hero layout', '2026-10-06', 'done', null, 9, ['ui', 'design']); // repeat: merged, tags combined
+    await add(web, 'hero layout', '2026-10-06', 'done', null, 9, ['ui', 'design']); // same work on another day: its own row
     await add(web, 'API keys', '2026-10-06', 'blocked');
     await add(web, 'Footer', '2026-10-07', 'in_progress', 30, 12);
     await add(web, 'Tests', '2026-10-07', 'next', null, 13, ['qa']);
@@ -110,16 +110,17 @@ describe('summary as Excel', () => {
       [{ value: 'Work summary', style: 'title' }],
       ['Week of Mon 5 Oct – Sun 11 Oct 2026'],
       [],
-      [{ value: 'Website', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }],
+      [{ value: 'Website', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Date', style: 'bold' }, { value: 'Time', style: 'bold' }, { value: 'Tags', style: 'bold' }],
       ['Project tags: Client work, web'],
-      ['- Hero layout', 'Done', '#ui #design'],
-      ['- CMS', 'On hold', null],
-      ['- Footer', 'In progress', null],
-      ['- Tests', 'Next', '#qa'],
-      ['- API keys', 'Blocked', null],
+      ['- Hero layout', 'Done', { value: '2026-10-05', style: 'date' }, { value: 600, style: 'time' }, '#ui'],
+      ['- hero layout', 'Done', { value: '2026-10-06', style: 'date' }, { value: 540, style: 'time' }, '#design #ui'],
+      ['- CMS', 'On hold', { value: '2026-10-07', style: 'date' }, { value: 840, style: 'time' }, null],
+      ['- Footer', 'In progress', { value: '2026-10-07', style: 'date' }, { value: 720, style: 'time' }, null],
+      ['- Tests', 'Next', { value: '2026-10-07', style: 'date' }, { value: 780, style: 'time' }, '#qa'],
+      ['- API keys', 'Blocked', { value: '2026-10-06', style: 'date' }, { value: 600, style: 'time' }, null],
       [],
-      [{ value: 'No topic', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }],
-      ['- Expenses', 'Done', null],
+      [{ value: 'No topic', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Date', style: 'bold' }, { value: 'Time', style: 'bold' }, { value: 'Tags', style: 'bold' }],
+      ['- Expenses', 'Done', { value: '2026-10-08', style: 'date' }, { value: 600, style: 'time' }, null],
     ]);
 
     const files = unzip(formatSummaryXlsx(s));

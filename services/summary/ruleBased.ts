@@ -13,7 +13,6 @@ function summarizeTopic(topic: Topic | null, entries: Entry[], tags: string[] = 
   const counts = emptyByType(() => 0);
   const items = emptyByType<string[]>(() => []);
   const itemIds = emptyByType<number[]>(() => []);
-  const itemTags = emptyByType<string[][]>(() => []);
   const seen = emptyByType(() => new Map<string, number>());
   const starred = new Set<number>();
   const days = new Set<string>();
@@ -28,15 +27,11 @@ function summarizeTopic(topic: Topic | null, entries: Entry[], tags: string[] = 
       seen[e.type].set(key, e.id);
       items[e.type].push(e.text);
       itemIds[e.type].push(e.id);
-      itemTags[e.type].push([]);
     }
-    // Repeats add their tags to the item they were merged into.
-    const tags = itemTags[e.type][itemIds[e.type].indexOf(seen[e.type].get(key)!)];
-    for (const tag of e.tags ?? []) if (!tags.includes(tag)) tags.push(tag);
     // A starred repeat stars the item it was merged into.
     if (e.starred) starred.add(seen[e.type].get(key)!);
   }
-  return { topic, tags, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds, itemTags, starredIds: [...starred] };
+  return { topic, tags, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds, entries: [...entries].sort((a, b) => a.day.localeCompare(b.day) || a.createdAt - b.createdAt || a.id - b.id), starredIds: [...starred] };
 }
 
 /**

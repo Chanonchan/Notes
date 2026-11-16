@@ -6,9 +6,9 @@
  * small so file size doesn't matter.
  */
 
-export type CellStyle = 'title' | 'header' | 'bold' | 'duration' | 'date' | 'wrap';
+export type CellStyle = 'title' | 'header' | 'bold' | 'duration' | 'date' | 'wrap' | 'time';
 
-/** A string, number, or a styled value. `duration` takes minutes, `date` a 'YYYY-MM-DD' day. */
+/** A string, number, or a styled value. `duration` takes minutes, `date` a 'YYYY-MM-DD' day, `time` minutes after midnight. */
 export type Cell = string | number | null | undefined | { value: string | number; style: CellStyle };
 
 export interface Sheet {
@@ -24,16 +24,16 @@ export interface Sheet {
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 // Order matches <cellXfs> in STYLES_XML (index 0 is the default).
-const STYLE_INDEX: Record<CellStyle, number> = { title: 1, header: 2, bold: 3, duration: 4, date: 5, wrap: 6 };
+const STYLE_INDEX: Record<CellStyle, number> = { title: 1, header: 2, bold: 3, duration: 4, date: 5, wrap: 6, time: 7 };
 
 const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="2"><numFmt numFmtId="164" formatCode="[h]:mm"/><numFmt numFmtId="165" formatCode="ddd d mmm yyyy"/></numFmts>
+<numFmts count="3"><numFmt numFmtId="164" formatCode="[h]:mm"/><numFmt numFmtId="165" formatCode="ddd d mmm yyyy"/><numFmt numFmtId="166" formatCode="hh:mm"/></numFmts>
 <fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts>
 <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF7"/><bgColor indexed="64"/></patternFill></fill></fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="7">
+<cellXfs count="8">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
@@ -41,6 +41,7 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 <xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
@@ -83,7 +84,7 @@ function cellXml(cell: Cell, ref: string): string {
   if (typeof cell === 'object') {
     style = STYLE_INDEX[cell.style];
     value = cell.value;
-    if (cell.style === 'duration' && typeof value === 'number') value = value / 1440; // minutes → fraction of a day
+    if ((cell.style === 'duration' || cell.style === 'time') && typeof value === 'number') value = value / 1440; // minutes → fraction of a day
     if (cell.style === 'date' && typeof value === 'string') value = excelDate(value);
   } else {
     value = cell;

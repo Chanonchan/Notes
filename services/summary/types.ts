@@ -35,8 +35,8 @@ export interface TopicSummary {
   items: Record<EntryType, string[]>;
   /** Entry id behind each item (same order as `items`), for opening it to edit. */
   itemIds: Record<EntryType, number[]>;
-  /** Tags per item (same order as `items`), merged across repeats of the same text. */
-  itemTags: Record<EntryType, string[][]>;
+  /** Every entry in the topic, oldest first (not de-duplicated). */
+  entries: Entry[];
   /** Ids (from `itemIds`) of starred items: important to the project. */
   starredIds: number[];
 }
