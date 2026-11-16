@@ -97,38 +97,31 @@ describe('summary as Excel', () => {
     await db.run("UPDATE entries SET starred = 1 WHERE text = 'Hero layout'");
   });
 
-  it('builds overview, items and open sheets', async () => {
+  it('lists each topic with its items underneath', async () => {
     const s = await buildSummary(db, rangeFor('week', '2026-10-07'));
-    const [overview, items, open] = summaryToSheets(s);
-
-    expect(overview.rows[1]).toEqual(['Week of Mon 5 Oct – Sun 11 Oct 2026']);
-    expect(overview.rows).toContainEqual([{ value: 'Time', style: 'bold' }, { value: 135, style: 'duration' }]);
-    expect(overview.rows).toContainEqual([{ value: 'Not touched', style: 'bold' }, 'Infra']);
-    expect(overview.rows).toContainEqual(['Website', 3, 3, { value: 120, style: 'duration' }, 1, null, 1, null, 1]);
-    expect(overview.rows).toContainEqual(['No topic', 1, 1, { value: 15, style: 'duration' }, 1, null, null, null, null]);
-
-    expect(items.rows.slice(1).map((r) => [r[0], r[1], (r[2] as { value: string }).value, r[3]])).toEqual([
-      ['Website', 'Done', 'Hero layout', '★'],
-      ['Website', 'In progress', 'Footer', null],
-      ['Website', 'Blocked', 'API keys', null],
-      ['No topic', 'Done', 'Expenses', null],
-    ]);
-
-    expect(open.name).toBe('Blocked & open');
-    expect(open.rows.slice(1).map((r) => [r[0], r[2], r[3]])).toEqual([
-      ['Blocked', 'Website', { value: '2026-10-06', style: 'date' }],
-      ['In progress', 'Website', { value: '2026-10-07', style: 'date' }],
+    const sheets = summaryToSheets(s);
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0].rows).toEqual([
+      [{ value: 'Work summary', style: 'title' }],
+      ['Week of Mon 5 Oct – Sun 11 Oct 2026'],
+      [],
+      [{ value: 'Website', style: 'bold' }],
+      ['- Hero layout'],
+      ['- Footer'],
+      ['- API keys'],
+      [],
+      [{ value: 'No topic', style: 'bold' }],
+      ['- Expenses'],
     ]);
 
     const files = unzip(formatSummaryXlsx(s));
-    expect(files.get('xl/worksheets/sheet2.xml')).toContain('Hero layout');
+    expect(files.get('xl/worksheets/sheet1.xml')).toContain('- Hero layout');
     expect(summaryFilename(s)).toBe('daylog-summary-2026-10-05-to-2026-10-11.xlsx');
   });
 
   it('handles an empty day', async () => {
     const s = await buildSummary(db, rangeFor('day', '2026-10-10'));
-    const sheets = summaryToSheets(s);
-    expect(sheets.map((x) => x.name)).toEqual(['Summary', 'Items']);
+    expect(summaryToSheets(s)[0].rows.at(-1)).toEqual(['Nothing logged.']);
     expect(summaryFilename(s)).toBe('daylog-summary-2026-10-10.xlsx');
     expect(() => unzip(formatSummaryXlsx(s))).not.toThrow();
   });
