@@ -17,11 +17,15 @@ export interface SummaryInput {
   topics: Topic[];
   /** Ids of entries that were continued later (carried over) — not "still open". */
   continuedIds: Set<number>;
+  /** Each topic's own tags, keyed by topic id. */
+  topicTags?: Map<number, string[]>;
 }
 
 export interface TopicSummary {
   /** null = entries without a topic. */
   topic: Topic | null;
+  /** The topic's own tags (not the entries'). */
+  tags: string[];
   entryCount: number;
   /** Distinct days with entries, ascending. */
   days: DayKey[];

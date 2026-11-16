@@ -15,6 +15,7 @@ export function summaryToSheets(summary: Summary): Sheet[] {
   if (!summary.topics.length) rows.push([], ['Nothing logged.']);
   for (const t of summary.topics) {
     rows.push([], [{ value: t.topic?.name ?? 'No topic', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }]);
+    if (t.tags.length) rows.push([`Project tags: ${t.tags.join(', ')}`]);
     for (const type of TYPE_ORDER) {
       t.items[type].forEach((text, i) => {
         const tags = t.itemTags[type][i] ?? [];

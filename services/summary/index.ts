@@ -1,4 +1,4 @@
-import { listEntriesInRange, listTopics } from '../../db';
+import { listEntriesInRange, listTopicTags, listTopics } from '../../db';
 import type { Db } from '../../db/client';
 import { ruleBasedSummarizer } from './ruleBased';
 import type { Summarizer, Summary, SummaryInput, SummaryRange } from './types';
@@ -19,7 +19,7 @@ export function getSummarizer(): Summarizer {
 }
 
 export async function loadSummaryInput(db: Db, range: SummaryRange): Promise<SummaryInput> {
-  const [entries, topics, continued] = await Promise.all([
+  const [entries, topics, continued, topicTags] = await Promise.all([
     listEntriesInRange(db, range.from, range.to),
     listTopics(db, { includeArchived: true }),
     db.all<{ id: number }>(
@@ -27,8 +27,9 @@ export async function loadSummaryInput(db: Db, range: SummaryRange): Promise<Sum
        WHERE carried_from_id IS NOT NULL AND day <= ?`,
       [range.to],
     ),
+    listTopicTags(db),
   ]);
-  return { range, entries, topics, continuedIds: new Set(continued.map((r) => r.id)) };
+  return { range, entries, topics, continuedIds: new Set(continued.map((r) => r.id)), topicTags };
 }
 
 export async function buildSummary(db: Db, range: SummaryRange, summarizer = getSummarizer()): Promise<Summary> {

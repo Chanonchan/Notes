@@ -9,7 +9,7 @@ const emptyByType = <T>(make: () => T) =>
 
 const norm = (text: string) => text.trim().toLowerCase().replace(/\s+/g, ' ');
 
-function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
+function summarizeTopic(topic: Topic | null, entries: Entry[], tags: string[] = []): TopicSummary {
   const counts = emptyByType(() => 0);
   const items = emptyByType<string[]>(() => []);
   const itemIds = emptyByType<number[]>(() => []);
@@ -36,7 +36,7 @@ function summarizeTopic(topic: Topic | null, entries: Entry[]): TopicSummary {
     // A starred repeat stars the item it was merged into.
     if (e.starred) starred.add(seen[e.type].get(key)!);
   }
-  return { topic, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds, itemTags, starredIds: [...starred] };
+  return { topic, tags, entryCount: entries.length, days: [...days].sort(), totalMinutes, counts, items, itemIds, itemTags, starredIds: [...starred] };
 }
 
 /**
@@ -65,7 +65,7 @@ export function summarizeWithRules(input: SummaryInput): Summary {
   }
 
   const topics = [...groups]
-    .map(([id, list]) => summarizeTopic(id === null ? null : byId.get(id)!, list))
+    .map(([id, list]) => summarizeTopic(id === null ? null : byId.get(id)!, list, id === null ? [] : input.topicTags?.get(id)))
     .sort(
       (a, b) =>
         (a.topic === null ? 1 : 0) - (b.topic === null ? 1 : 0) ||

@@ -1,4 +1,4 @@
-import { createEntry, createTopic } from '../db';
+import { createEntry, createTopic, setTopicTags } from '../db';
 import type { Db } from '../db/client';
 import { buildXlsx, columnName, crc32, escapeXml, excelDate } from '../services/export/xlsx';
 import { buildSummary, formatSummaryXlsx, rangeFor, summaryFilename, summaryToSheets } from '../services/summary';
@@ -90,6 +90,7 @@ describe('summary as Excel', () => {
     db = await openMigratedDb();
     web = await createTopic(db, 'Website');
     await createTopic(db, 'Infra');
+    await setTopicTags(db, web.id, ['Client work', 'web']);
     await db.run('UPDATE topics SET created_at = 0');
     await add(web, 'Hero layout', '2026-10-05', 'done', 90, 10, ['ui']);
     await add(web, 'hero layout', '2026-10-06', 'done', null, 9, ['ui', 'design']); // repeat: merged, tags combined
@@ -110,6 +111,7 @@ describe('summary as Excel', () => {
       ['Week of Mon 5 Oct – Sun 11 Oct 2026'],
       [],
       [{ value: 'Website', style: 'bold' }, { value: 'Status', style: 'bold' }, { value: 'Tags', style: 'bold' }],
+      ['Project tags: Client work, web'],
       ['- Hero layout', 'Done', '#ui #design'],
       ['- CMS', 'On hold', null],
       ['- Footer', 'In progress', null],
