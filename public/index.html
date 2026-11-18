@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <!-- viewport-fit=cover lets the app draw under the notch; safe areas are handled in the app. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
 
     <!-- Installable app: "Add to Home Screen" opens full-screen instead of in the browser. -->
@@ -24,6 +24,18 @@
       body {
         height: 100%;
         background-color: #F7F7F5;
+      }
+      /* Pin the page to the screen: only the app's own lists scroll, the page itself never moves or zooms. */
+      html,
+      body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: pan-x pan-y;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
       }
       @media (prefers-color-scheme: dark) {
         html,
@@ -49,5 +61,24 @@
   <body>
     <noscript>You need to enable JavaScript to run DayLog.</noscript>
     <div id="root"></div>
+    <script>
+      // iPhone Safari ignores maximum-scale / user-scalable for pinch zoom, so block
+      // two-finger gestures here. One-finger scrolling and taps are untouched.
+      (function () {
+        var stop = function (e) {
+          e.preventDefault();
+        };
+        document.addEventListener('gesturestart', stop, { passive: false });
+        document.addEventListener('gesturechange', stop, { passive: false });
+        document.addEventListener('gestureend', stop, { passive: false });
+        document.addEventListener(
+          'touchmove',
+          function (e) {
+            if (e.touches.length > 1 || (typeof e.scale === 'number' && e.scale !== 1)) e.preventDefault();
+          },
+          { passive: false },
+        );
+      })();
+    </script>
   </body>
 </html>
