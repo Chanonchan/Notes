@@ -3,8 +3,9 @@ import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { listTopicStats } from '../db';
+import { listTopicStats, topicStatus } from '../db';
 import { GroupLabel, ListGroup, ListRow } from './List';
+import { TOPIC_STATUS_LABELS, TopicIcon, useTopicStatusColor } from './TopicIcon';
 import { TagEditor, withDraft } from './TopicTags';
 import { Button } from './ui';
 import { useQuery } from '../hooks/useDb';
@@ -29,6 +30,11 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
   const t = useTheme();
   const [open, setOpen] = useState(false);
   const selected = topics.find((x) => x.id === value);
+  // The chosen topic's tag icon takes its status colour, like in the list.
+  const { data: stats } = useQuery((db) => listTopicStats(db));
+  const selectedStats = stats?.find((s) => s.topic.id === value);
+  const selectedColor = useTopicStatusColor(selectedStats);
+  const selectedStatus = selectedStats ? topicStatus(selectedStats) : null;
   const suggested = suggestedId != null && suggestedId !== value ? topics.find((x) => x.id === suggestedId) : undefined;
 
   return (
@@ -36,10 +42,10 @@ export function TopicPicker({ topics, value, onChange, onCreate, suggestedId }: 
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={`Topic: ${selected?.name ?? 'none'}. Tap to choose.`}
+        accessibilityLabel={`Topic: ${selected?.name ?? 'none'}${selectedStatus ? `, ${TOPIC_STATUS_LABELS[selectedStatus]}` : ''}. Tap to choose.`}
         style={({ pressed }) => [styles.button, { backgroundColor: pressed ? t.border : t.chip }]}
       >
-        <Ionicons name="pricetag-outline" size={16} color={t.muted} />
+        <Ionicons name={selectedStatus ? 'pricetag' : 'pricetag-outline'} size={16} color={selected ? selectedColor : t.muted} />
         <Text style={[styles.buttonText, { color: selected ? t.text : t.muted }]} numberOfLines={1}>
           {selected?.name ?? 'Choose topic'}
         </Text>
@@ -207,10 +213,10 @@ export function TopicSheet({
             {filtered.map((s) => (
               <ListRow
                 key={s.topic.id}
-                icon="pricetag-outline"
+                leading={<TopicIcon stats={s} />}
                 title={s.topic.name}
                 titleLines={1}
-                accessibilityLabel={s.topic.name}
+                accessibilityLabel={`${s.topic.name}, ${topicStatus(s) ? TOPIC_STATUS_LABELS[topicStatus(s)!] : 'no entries yet'}`}
                 subtitle={[s.tags.length ? s.tags.map((x) => `#${x}`).join(' ') : null, s.lastDay ? `last used ${formatRelativeDay(s.lastDay).toLowerCase()}` : 'not used yet']
                   .filter(Boolean)
                   .join(' · ')}
